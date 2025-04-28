@@ -15,7 +15,7 @@ const Home = () => {
   return (
     <div className="bg-background min-h-screen">
       <Navbar />
-      <main className="px-8 py-12">
+      <main className="px-8 py-12 mt-8">
         <h1 className="text-center text-4xl font-bold text-text mb-12">
           Coffee Forecast
           <hr className="border-primary mt-5" />
