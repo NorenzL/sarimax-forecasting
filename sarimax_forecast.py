@@ -18,10 +18,10 @@ y_train, y_test = y[:train_size], y[train_size:]
 X_train, X_test = X[:train_size], X[train_size:]
 
 # Define p, d, q, P, D, Q, s (seasonality) ranges
-p = d = q = range(0, 5)  # Extended range for better exploration
-P = D = Q = range(0, 5)
+p = d = q = range(0, 3)  # Extended range for better exploration
+P = D = Q = range(0, 3)
 s = [4]  # Seasonal period of 4
-
+    
 # Generate all possible parameter combinations
 param_combinations = list(itertools.product(p, d, q, P, D, Q, s))
 
@@ -64,7 +64,7 @@ for params in param_combinations:
 # Sort results by MAE
 results_list.sort(key=lambda x: x[2])  # Sorting based on MAE
 
-# Display the top 10 best combinations based on MAE
+# Display the top 10 best combinations based on AIC
 print("\nTop 10 parameter combinations based on MAE:")
 for i, (params, aic, mae, rmse, mase, mape) in enumerate(results_list[:10]):
     print(f"{i+1}. Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.5f}, RMSE: {rmse:.5f}, MASE: {mase:.5f}, MAPE: {mape:.2f}%")
@@ -72,7 +72,7 @@ for i, (params, aic, mae, rmse, mase, mape) in enumerate(results_list[:10]):
 print(f"\nBest order based on MAE: {best_params[:3]}, Best seasonal order: {best_params[3:]}, Lowest MAE: {best_metric:.5f}")
 
 # Train the best SARIMAX Model
-best_model = SARIMAX(y_train, exog=X_train, order=params[:3], seasonal_order=params[3:])
+best_model = SARIMAX(y_train, exog=X_train, order=best_params[:3], seasonal_order=best_params[3:])
 best_result = best_model.fit()
 
 # Forecast with exogenous variables
