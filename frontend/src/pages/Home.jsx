@@ -7,8 +7,8 @@ import OtherFactors from "../components/OtherFactors";
 const Home = () => {
   // Define your factors & whether they’re already uploaded
   const factors = [
-    { name: "Inflation rate", uploaded: false },
-    { name: "Net Return", uploaded: true },
+    { name: "Inflation rate", uploaded: true },
+    { name: "Net Return", uploaded: false },
     { name: "Production Cost", uploaded: false },
   ];
 
