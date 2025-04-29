@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import ForecastCard from "../components/ForecastCard";
-import OtherFactors from "../components/OtherFactors";
+import CommonFactors from "../components/CommonFactors";
 
 const Home = () => {
   const [factors, setFactors] = useState([
@@ -60,7 +60,7 @@ const Home = () => {
 
         <hr className="border-primary mb-8" />
 
-        <OtherFactors
+        <CommonFactors
           factors={factors}
           onUpload={handleUpload}
           onConfirmDelete={handleConfirmDelete}

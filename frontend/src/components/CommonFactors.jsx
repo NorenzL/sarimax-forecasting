@@ -1,6 +1,6 @@
 import React from "react";
 
-const OtherFactors = ({
+const CommonFactors = ({
   factors,
   onUpload,
   onConfirmDelete,
@@ -53,4 +53,4 @@ const OtherFactors = ({
   );
 };
 
-export default OtherFactors;
+export default CommonFactors;
