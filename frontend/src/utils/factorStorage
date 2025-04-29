@@ -1,0 +1,17 @@
+// utils/factorStorage.js
+export const getCommonFactors = () => {
+  const saved = localStorage.getItem("commonFactors");
+  return saved
+    ? JSON.parse(saved)
+    : {
+        "Inflation rate": false,
+        "Net Return": false,
+        "Production Cost": false,
+      };
+};
+
+export const setCommonFactor = (name, status) => {
+  const current = getCommonFactors();
+  current[name] = status;
+  localStorage.setItem("commonFactors", JSON.stringify(current));
+};
