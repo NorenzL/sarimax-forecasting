@@ -11,7 +11,7 @@ const Navbar = () => {
           className={({ isActive }) =>
             isActive
               ? "bg-text px-8 py-1 rounded-full border-2 border-border"
-              : "px-8 py-1 transition"
+              : "border-2 border-transparent rounded-full hover:bg-text hover:border-border px-8 py-1 transition"
           }
         >
           Dashboard

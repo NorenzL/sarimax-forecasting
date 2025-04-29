@@ -53,9 +53,18 @@ const Home = () => {
         </h1>
 
         <div className="flex justify-center gap-8 mb-16">
-          <ForecastCard title="Arabica Farmgate Price Forecast" />
-          <ForecastCard title="Excelsa Farmgate Price Forecast" />
-          <ForecastCard title="Robusta Farmgate Price Forecast" />
+          <ForecastCard
+            title="Arabica Farmgate Price Forecast"
+            type="arabica"
+          />
+          <ForecastCard
+            title="Excelsa Farmgate Price Forecast"
+            type="excelsa"
+          />
+          <ForecastCard
+            title="Robusta Farmgate Price Forecast"
+            type="robusta"
+          />
         </div>
 
         <hr className="border-primary mb-8" />
