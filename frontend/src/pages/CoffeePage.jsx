@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CommonFactors from "../components/CommonFactors";
 import addIcon from "../assets/images/add-icon.png";
+import DeleteModal from "../components/DeleteModal";
 
 const CoffeePage = () => {
   const { type } = useParams();
@@ -13,6 +14,39 @@ const CoffeePage = () => {
     { name: "Net Return", uploaded: false },
     { name: "Production Cost", uploaded: false },
   ]);
+
+  const [loadingFactor, setLoadingFactor] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [factorToDelete, setFactorToDelete] = useState(null);
+
+  const handleUpload = (name) => {
+    setLoadingFactor(name);
+    setTimeout(() => {
+      setFactors((prev) =>
+        prev.map((f) => (f.name === name ? { ...f, uploaded: true } : f))
+      );
+      setLoadingFactor(null);
+    }, 800);
+  };
+
+  const handleConfirmDelete = (name) => {
+    setFactorToDelete(name);
+    setShowConfirm(true);
+  };
+
+  const handleDelete = () => {
+    setLoadingFactor(factorToDelete);
+    setShowConfirm(false);
+    setTimeout(() => {
+      setFactors((prev) =>
+        prev.map((f) =>
+          f.name === factorToDelete ? { ...f, uploaded: false } : f
+        )
+      );
+      setLoadingFactor(null);
+      setFactorToDelete(null);
+    }, 800);
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -25,7 +59,7 @@ const CoffeePage = () => {
           <hr className="border-primary mt-5 w-full" />
         </h1>
 
-        {/* Main Forecast Cards (Farmgate Price & Production) */}
+        {/* Forecast Cards */}
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
           {[`${readableType} Farmgate Price`, `${readableType} Production`].map(
             (label) => (
@@ -39,10 +73,16 @@ const CoffeePage = () => {
             )
           )}
         </div>
-        {/* Shared External Factors */}
-        <CommonFactors factors={factors} />
 
-        {/* Forecast Button */}
+        {/* Common External Factors */}
+        <CommonFactors
+          factors={factors}
+          onUpload={handleUpload}
+          onConfirmDelete={handleConfirmDelete}
+          loadingFactor={loadingFactor}
+        />
+
+        {/* Forecast + Invisible Spacer Button for Alignment */}
         <div className="flex items-center gap-4 mt-6">
           <button className="bg-highlights text-text px-[65px] py-2 rounded-full hover:bg-[#a19f43] transition hover:text-background">
             Forecast
@@ -50,6 +90,14 @@ const CoffeePage = () => {
           <button className="opacity-0 pointer-events-none">×</button>
         </div>
       </main>
+
+      {/* Reusable Delete Modal */}
+      <DeleteModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        fileName={factorToDelete}
+      />
     </div>
   );
 };
