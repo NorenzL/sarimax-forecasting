@@ -1,16 +1,38 @@
 // src/pages/Home.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import ForecastCard from "../components/ForecastCard";
 import OtherFactors from "../components/OtherFactors";
 
 const Home = () => {
-  // Define your factors & whether they’re already uploaded
-  const factors = [
+  const defaultFactors = [
     { name: "Inflation rate", uploaded: true },
     { name: "Net Return", uploaded: false },
     { name: "Production Cost", uploaded: false },
   ];
+
+  const [factors, setFactors] = useState(defaultFactors);
+
+  // Load from localStorage when page loads
+  useEffect(() => {
+    const savedFactors = localStorage.getItem("factors");
+    if (savedFactors) {
+      setFactors(JSON.parse(savedFactors));
+    }
+  }, []);
+
+  // Save to localStorage every time factors change
+  useEffect(() => {
+    localStorage.setItem("factors", JSON.stringify(factors));
+  }, [factors]);
+
+  const handleRemove = (factorName) => {
+    setFactors((prevFactors) =>
+      prevFactors.map((factor) =>
+        factor.name === factorName ? { ...factor, uploaded: false } : factor
+      )
+    );
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -29,8 +51,7 @@ const Home = () => {
 
         <hr className="border-primary mb-8" />
 
-        {/* ← Replace your inline mapping with the OtherFactors component */}
-        <OtherFactors factors={factors} />
+        <OtherFactors factors={factors} onRemove={handleRemove} />
       </main>
     </div>
   );

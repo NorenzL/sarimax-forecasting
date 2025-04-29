@@ -1,6 +1,7 @@
 import React from "react";
 
-const OtherFactors = ({ factors }) => {
+const OtherFactors = ({ factors, onRemove }) => {
+  // ← add onRemove here
   return (
     <div className="flex flex-col items-center gap-2 mt-4">
       <p className="text-xs text-center mb-2 text-text">
@@ -24,6 +25,7 @@ const OtherFactors = ({ factors }) => {
 
             {/* Always render the cross button, but toggle opacity */}
             <button
+              onClick={() => onRemove(factor.name)} // ← ADD this onClick
               className={`font-bold transition hover:text-red-600 ${
                 factor.uploaded
                   ? "opacity-100"
