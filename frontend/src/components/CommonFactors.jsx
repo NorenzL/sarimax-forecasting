@@ -43,28 +43,18 @@ const CommonFactors = ({
             className="flex items-center gap-2"
           >
             {/* Hidden file input */}
-            <input
-              type="file"
-              accept=".csv,.xlsx"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={(e) => handleChange(e, factor.name)}
-              id={`cf-${factor.name}`}
-            />
-
-            {/* Styled label as button */}
-            <label
-              htmlFor={`cf-${factor.name}`}
+            <button
+              onClick={() => onUpload(factor.name)}
               className={`${base} ${
                 factor.uploaded ? active : inactive
-              } min-w-[12rem] text-center flex justify-center items-center cursor-pointer`}
+              } min-w-[12rem] text-center flex justify-center items-center`}
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-secondary border-solid"></div>
               ) : (
                 factor.name
               )}
-            </label>
+            </button>
 
             {/* Delete Button */}
             <button

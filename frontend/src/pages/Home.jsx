@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import ForecastCard from "../components/ForecastCard";
 import CommonFactors from "../components/CommonFactors";
 import DeleteModal from "../components/DeleteModal";
+import UploadModal from "../components/UploadModal";
 import { useFactors } from "../contexts/FactorContext";
 
 const Home = () => {
@@ -12,6 +13,13 @@ const Home = () => {
   const [loadingFactor, setLoadingFactor] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toDelete, setToDelete] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedFactor, setSelectedFactor] = useState(null);
+
+  const handleUploadTrigger = (factorName) => {
+    setSelectedFactor(factorName);
+    setUploadModalOpen(true);
+  };
 
   const handleUpload = (name, file) => {
     setLoadingFactor(name);
@@ -27,14 +35,13 @@ const Home = () => {
   };
 
   const handleDelete = () => {
-    setLoadingFactor(toDelete); // Show spinner
-    setShowConfirm(false); // Close modal
+    setLoadingFactor(toDelete);
+    setShowConfirm(false);
 
-    // Simulate delay (or handle actual async logic)
     setTimeout(() => {
-      deleteFactor(toDelete); // Remove the factor
-      setLoadingFactor(null); // Stop spinner
-      setToDelete(null); // Reset state
+      deleteFactor(toDelete);
+      setLoadingFactor(null);
+      setToDelete(null);
     }, 800);
   };
 
@@ -66,12 +73,13 @@ const Home = () => {
 
         <CommonFactors
           factors={factors}
-          onUpload={handleUpload}
+          onUpload={handleUploadTrigger}
           onConfirmDelete={handleConfirmDelete}
           loadingFactor={loadingFactor}
         />
       </main>
 
+      {/* Delete Modal */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
@@ -86,6 +94,26 @@ const Home = () => {
               onClose={() => setShowConfirm(false)}
               onConfirm={handleDelete}
               fileName={toDelete}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Upload Modal (with animation) */}
+      <AnimatePresence>
+        {uploadModalOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <UploadModal
+              isOpen={uploadModalOpen}
+              onClose={() => setUploadModalOpen(false)}
+              onUpload={handleUpload}
+              factorName={selectedFactor}
             />
           </motion.div>
         )}

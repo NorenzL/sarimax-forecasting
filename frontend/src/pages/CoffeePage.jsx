@@ -5,7 +5,9 @@ import Navbar from "../components/Navbar";
 import CommonFactors from "../components/CommonFactors";
 import DeleteModal from "../components/DeleteModal";
 import addIcon from "../assets/images/add-icon.png";
+import UploadModal from "../components/UploadModal";
 import { useFactors } from "../contexts/FactorContext";
+import { AnimatePresence, motion } from "framer-motion";
 
 const CoffeePage = () => {
   const { type } = useParams();
@@ -14,6 +16,13 @@ const CoffeePage = () => {
   const [loadingFactor, setLoadingFactor] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toDelete, setToDelete] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedFactor, setSelectedFactor] = useState(null);
+
+  const handleUploadTrigger = (factorName) => {
+    setSelectedFactor(factorName);
+    setUploadModalOpen(true);
+  };
 
   const handleUpload = (name, file) => {
     setLoadingFactor(name);
@@ -64,7 +73,7 @@ const CoffeePage = () => {
 
         <CommonFactors
           factors={factors}
-          onUpload={handleUpload}
+          onUpload={handleUploadTrigger}
           onConfirmDelete={handleConfirmDelete}
           loadingFactor={loadingFactor}
         />
@@ -77,14 +86,45 @@ const CoffeePage = () => {
         </div>
       </main>
 
-      {showConfirm && (
-        <DeleteModal
-          isOpen={showConfirm}
-          onClose={() => setShowConfirm(false)}
-          onConfirm={handleDelete}
-          fileName={toDelete}
-        />
-      )}
+      {/* Delete Modal */}
+      <AnimatePresence>
+        {showConfirm && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <DeleteModal
+              isOpen={showConfirm}
+              onClose={() => setShowConfirm(false)}
+              onConfirm={handleDelete}
+              fileName={toDelete}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Upload Modal (with animation) */}
+      <AnimatePresence>
+        {uploadModalOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <UploadModal
+              isOpen={uploadModalOpen}
+              onClose={() => setUploadModalOpen(false)}
+              onUpload={handleUpload}
+              factorName={selectedFactor}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
