@@ -1,46 +1,40 @@
+// src/pages/Home.jsx
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import ForecastCard from "../components/ForecastCard";
 import CommonFactors from "../components/CommonFactors";
 import DeleteModal from "../components/DeleteModal";
+import { useFactors } from "../contexts/FactorContext";
 
 const Home = () => {
-  const [factors, setFactors] = useState([
-    { name: "Inflation rate", uploaded: true },
-    { name: "Net Return", uploaded: false },
-    { name: "Production Cost", uploaded: false },
-  ]);
+  const { factors, uploadFactor, deleteFactor } = useFactors();
   const [loadingFactor, setLoadingFactor] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [factorToDelete, setFactorToDelete] = useState(null);
+  const [toDelete, setToDelete] = useState(null);
 
-  const handleUpload = (name) => {
+  const handleUpload = (name, file) => {
     setLoadingFactor(name);
     setTimeout(() => {
-      setFactors((prev) =>
-        prev.map((f) => (f.name === name ? { ...f, uploaded: true } : f))
-      );
+      uploadFactor(name, file);
       setLoadingFactor(null);
     }, 800);
   };
 
   const handleConfirmDelete = (name) => {
-    setFactorToDelete(name);
+    setToDelete(name);
     setShowConfirm(true);
   };
 
   const handleDelete = () => {
-    setLoadingFactor(factorToDelete);
-    setShowConfirm(false);
+    setLoadingFactor(toDelete); // Show spinner
+    setShowConfirm(false); // Close modal
+
+    // Simulate delay (or handle actual async logic)
     setTimeout(() => {
-      setFactors((prev) =>
-        prev.map((f) =>
-          f.name === factorToDelete ? { ...f, uploaded: false } : f
-        )
-      );
-      setLoadingFactor(null);
-      setFactorToDelete(null);
+      deleteFactor(toDelete); // Remove the factor
+      setLoadingFactor(null); // Stop spinner
+      setToDelete(null); // Reset state
     }, 800);
   };
 
@@ -78,7 +72,6 @@ const Home = () => {
         />
       </main>
 
-      {/* AnimatePresence will handle mounting/unmounting animations */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
@@ -92,7 +85,7 @@ const Home = () => {
               isOpen={showConfirm}
               onClose={() => setShowConfirm(false)}
               onConfirm={handleDelete}
-              fileName={factorToDelete}
+              fileName={toDelete}
             />
           </motion.div>
         )}
