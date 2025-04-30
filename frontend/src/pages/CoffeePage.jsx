@@ -52,16 +52,26 @@ const CoffeePage = () => {
     <div className="bg-background min-h-screen">
       <Navbar />
       <main className="px-8 py-12 mt-8 flex flex-col items-center gap-10">
-        <h1 className="text-3xl font-bold text-text text-center">
-          {readable} Data Collection
-          <hr className="border-primary mt-5 w-full" />
-        </h1>
+        <div className="w-full max-w-6xl flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            <button onClick={() => window.history.back()}>
+              <span className="text-2xl font-bold text-text hover:text-[#4d2d1c]">
+                &larr;
+              </span>
+            </button>
+            <h1 className="text-3xl font-bold text-text">
+              {readable} Data Collection
+            </h1>
+          </div>
+          <hr className="border-2 border-text w-full" />
+        </div>
 
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
           {[`${readable} Farmgate Price`, `${readable} Production`].map(
             (label) => (
               <div
                 key={label}
+                onClick={() => handleUploadTrigger(label)}
                 className="bg-background text-text text-center rounded-md border-2 border-border p-6 flex flex-col items-center justify-center shadow hover:scale-105 hover:shadow-lg transition w-full max-w-96 h-64 cursor-pointer hover:bg-primary hover:text-background"
               >
                 <img src={addIcon} alt="Add" className="w-32 h-32 mb-4" />

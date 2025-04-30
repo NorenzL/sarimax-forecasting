@@ -7,21 +7,38 @@ const UploadModal = ({ isOpen, onClose, onUpload, factorName }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      onUpload(factorName, file);
-      onClose();
+    if (!file) return;
+
+    if (
+      !file.name.toLowerCase().endsWith(".csv") &&
+      !file.name.toLowerCase().endsWith(".xlsx")
+    ) {
+      alert("Only .csv or .xlsx files are allowed.");
+      return;
     }
+
+    setFileName(file.name);
+    onUpload(factorName, file);
+    onClose();
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) {
-      setFileName(file.name);
-      onUpload(factorName, file);
-      onClose();
+    if (!file) return;
+
+    // Validate file type
+    if (
+      !file.name.toLowerCase().endsWith(".csv") &&
+      !file.name.toLowerCase().endsWith(".xlsx")
+    ) {
+      alert("Only .csv or .xlsx files are allowed.");
+      return;
     }
+
+    setFileName(file.name);
+    onUpload(factorName, file);
+    onClose();
   };
 
   const handleDragOver = (e) => {
