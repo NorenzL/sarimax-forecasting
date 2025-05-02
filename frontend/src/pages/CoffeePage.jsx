@@ -31,7 +31,10 @@ const CoffeePage = () => {
     setLoadingFactor(name);
     setTimeout(() => {
       // Check if it's a main factor
-      if (name.includes("Farmgate Price") || name.includes("Production")) {
+      if (
+        name.includes("Farmgate Price") ||
+        name.includes("Production Volume")
+      ) {
         setMainFactors((prev) => [...prev, name]);
       } else {
         uploadFactor(name, file);
@@ -51,7 +54,7 @@ const CoffeePage = () => {
     setTimeout(() => {
       if (
         toDelete.includes("Farmgate Price") ||
-        toDelete.includes("Production")
+        toDelete.includes("Production Volume")
       ) {
         setMainFactors((prev) => prev.filter((item) => item !== toDelete));
       } else {
@@ -81,7 +84,7 @@ const CoffeePage = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
-          {[`${readable} Farmgate Price`, `${readable} Production`].map(
+          {[`${readable} Farmgate Price`, `${readable} Production Volume`].map(
             (label) => {
               const isUploaded = mainFactors.includes(label);
               return (
