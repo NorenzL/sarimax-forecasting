@@ -21,6 +21,34 @@ const CoffeePage = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFactor, setSelectedFactor] = useState(null);
   const [mainFactors, setMainFactors] = useState([]);
+  const [missingFactors, setMissingFactors] = useState([]);
+  const [showMissingModal, setShowMissingModal] = useState(false);
+
+  const requiredFactors = [
+    `${readable} Farmgate Price`,
+    `${readable} Production Volume`,
+    "Inflation rate",
+    "Net Return",
+    "Production Cost",
+  ];
+
+  const handleForecastClick = () => {
+    const uploadedFactors = [
+      ...mainFactors,
+      ...factors.filter((f) => f.uploaded).map((f) => f.name),
+    ];
+
+    const missing = requiredFactors.filter(
+      (factor) => !uploadedFactors.includes(factor)
+    );
+
+    if (missing.length > 0) {
+      setMissingFactors(missing);
+      setShowMissingModal(true);
+    } else {
+      console.log("All files uploaded, proceeding...");
+    }
+  };
 
   const handleUploadTrigger = (factorName) => {
     setSelectedFactor(factorName);
@@ -136,7 +164,10 @@ const CoffeePage = () => {
         />
 
         <div className="flex items-center gap-4 mt-6">
-          <button className="bg-highlights text-text px-[65px] py-2 rounded-full hover:bg-[#a19f43] transition hover:text-background">
+          <button
+            className="bg-highlights text-text px-[65px] py-2 rounded-full hover:bg-[#a19f43] transition hover:text-background"
+            onClick={handleForecastClick}
+          >
             Forecast
           </button>
           <button className="opacity-0 pointer-events-none">×</button>
@@ -179,6 +210,54 @@ const CoffeePage = () => {
               onUpload={handleUpload}
               factorName={selectedFactor}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showMissingModal && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="bg-[#FFF9EC] rounded-md shadow-lg w-full max-w-3xl">
+              {/* Header */}
+              <div className="bg-[#5C4033] text-white px-6 py-4 flex justify-between items-center rounded-t-md">
+                <h2 className="text-xl font-semibold">Incomplete Data</h2>
+                <button
+                  className="text-2xl font-bold hover:text-red-400"
+                  onClick={() => setShowMissingModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-3 py-3">
+                <div className="border-2 border-[#5C4033] px-6 py-10 rounded">
+                  <h2 className="text-2xl font-bold mb-2 text-[#4d2d1c]">
+                    The system detects a missing Data file, please provide the
+                    Data of the following:
+                  </h2>
+                  <ul className="text-left space-y-2">
+                    {missingFactors.map((factor) => (
+                      <li
+                        key={factor}
+                        className="flex items-center gap-2 text-[#4d2d1c] font-medium mt-5"
+                      >
+                        <span className="text-red-600 border-2 border-red-600 rounded-full px-1">
+                          ✖
+                        </span>
+                        {factor}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
