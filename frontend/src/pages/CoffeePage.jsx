@@ -8,6 +8,8 @@ import addIcon from "../assets/images/add-icon.png";
 import UploadModal from "../components/UploadModal";
 import { useFactors } from "../contexts/FactorContext";
 import { AnimatePresence, motion } from "framer-motion";
+import logo from "../assets/images/coffee-icon.png";
+import inventory from "../assets/images/inventory1.png";
 
 const CoffeePage = () => {
   const { type } = useParams();
@@ -18,6 +20,7 @@ const CoffeePage = () => {
   const [toDelete, setToDelete] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFactor, setSelectedFactor] = useState(null);
+  const [mainFactors, setMainFactors] = useState([]);
 
   const handleUploadTrigger = (factorName) => {
     setSelectedFactor(factorName);
@@ -27,7 +30,12 @@ const CoffeePage = () => {
   const handleUpload = (name, file) => {
     setLoadingFactor(name);
     setTimeout(() => {
-      uploadFactor(name, file);
+      // Check if it's a main factor
+      if (name.includes("Farmgate Price") || name.includes("Production")) {
+        setMainFactors((prev) => [...prev, name]);
+      } else {
+        uploadFactor(name, file);
+      }
       setLoadingFactor(null);
     }, 800);
   };
@@ -37,14 +45,20 @@ const CoffeePage = () => {
     setShowConfirm(true);
   };
   const handleDelete = () => {
-    setLoadingFactor(toDelete); // Show spinner
-    setShowConfirm(false); // Close modal
+    setLoadingFactor(toDelete);
+    setShowConfirm(false);
 
-    // Simulate delay (or handle actual async logic)
     setTimeout(() => {
-      deleteFactor(toDelete); // Remove the factor
-      setLoadingFactor(null); // Stop spinner
-      setToDelete(null); // Reset state
+      if (
+        toDelete.includes("Farmgate Price") ||
+        toDelete.includes("Production")
+      ) {
+        setMainFactors((prev) => prev.filter((item) => item !== toDelete));
+      } else {
+        deleteFactor(toDelete);
+      }
+      setLoadingFactor(null);
+      setToDelete(null);
     }, 800);
   };
 
@@ -68,16 +82,46 @@ const CoffeePage = () => {
 
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
           {[`${readable} Farmgate Price`, `${readable} Production`].map(
-            (label) => (
-              <div
-                key={label}
-                onClick={() => handleUploadTrigger(label)}
-                className="bg-background text-text text-center rounded-md border-2 border-border p-6 flex flex-col items-center justify-center shadow hover:scale-105 hover:shadow-lg transition w-full max-w-96 h-64 cursor-pointer hover:bg-primary hover:text-background"
-              >
-                <img src={addIcon} alt="Add" className="w-32 h-32 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">{label}</h2>
-              </div>
-            )
+            (label) => {
+              const isUploaded = mainFactors.includes(label);
+              return (
+                <div
+                  key={label}
+                  className={`relative bg-background text-text text-center rounded-md border-2 border-border p-6 flex flex-col items-center justify-center shadow transition w-full max-w-96 h-64 cursor-pointer ${
+                    isUploaded
+                      ? "hover:scale-105 hover:shadow-lg hover:bg-primary bg-primary text-white"
+                      : "hover:scale-105 hover:shadow-lg hover:bg-primary hover:text-background"
+                  }`}
+                  onClick={() => {
+                    if (!isUploaded) handleUploadTrigger(label);
+                  }}
+                >
+                  <img
+                    src={
+                      isUploaded
+                        ? label.includes("Production")
+                          ? inventory
+                          : logo
+                        : addIcon
+                    }
+                    alt="Icon"
+                    className="w-32 h-32 mb-4"
+                  />
+                  <h2 className="text-xl font-semibold mb-2">{label}</h2>
+                  {isUploaded && (
+                    <button
+                      className="absolute top-2 text-text right-2 bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white transition"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmDelete(label);
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            }
           )}
         </div>
 
