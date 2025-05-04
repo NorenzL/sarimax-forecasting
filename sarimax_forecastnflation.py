@@ -17,62 +17,62 @@ train_size = int(len(y) * 0.8)  # 80% train, 20% test
 y_train, y_test = y[:train_size], y[train_size:]
 X_train, X_test = X[:train_size], X[train_size:]
 
-# Define p, d, q, P, D, Q, s (seasonality) ranges
-p = d = q = range(0, 3)
-P = D = Q = range(0, 3)
-s = [4]  # Seasonal period of 4
+# # Define p, d, q, P, D, Q, s (seasonality) ranges
+# p = d = q = range(0, 3)
+# P = D = Q = range(0, 3)
+# s = [4]  # Seasonal period of 4
 
-# Generate all possible parameter combinations
-param_combinations = list(itertools.product(p, d, q, P, D, Q, s))
+# # Generate all possible parameter combinations
+# param_combinations = list(itertools.product(p, d, q, P, D, Q, s))
 
-# Grid Search for the best SARIMAX model based on AIC
-best_metric = float("inf")
-best_params = None
-results_list = []
+# # Grid Search for the best SARIMAX model based on AIC
+# best_metric = float("inf")
+# best_params = None
+# results_list = []
 
-print("Evaluating different parameter combinations...\n")
+# print("Evaluating different parameter combinations...\n")
 
-for params in param_combinations:
-    try:
-        model = SARIMAX(y_train, exog=X_train, order=params[:3], seasonal_order=params[3:])
-        result = model.fit(disp=False)
+# for params in param_combinations:
+#     try:
+#         model = SARIMAX(y_train, exog=X_train, order=params[:3], seasonal_order=params[3:])
+#         result = model.fit(disp=False)
         
-        # Forecast using test set
-        forecast = result.predict(start=len(y_train), end=len(y)-1, exog=X_test)
+#         # Forecast using test set
+#         forecast = result.predict(start=len(y_train), end=len(y)-1, exog=X_test)
 
-        # Compute Error Metrics
-        mae = mean_absolute_error(y_test, forecast)
-        rmse = np.sqrt(mean_squared_error(y_test, forecast))
-        naive_forecast = np.abs(np.diff(y_test)).mean()
-        mase = mae / naive_forecast
-        mape = np.mean(np.abs((y_test - forecast) / y_test)) * 100
-        aic = result.aic  # Still keep AIC for reference
+#         # Compute Error Metrics
+#         mae = mean_absolute_error(y_test, forecast)
+#         rmse = np.sqrt(mean_squared_error(y_test, forecast))
+#         naive_forecast = np.abs(np.diff(y_test)).mean()
+#         mase = mae / naive_forecast
+#         mape = np.mean(np.abs((y_test - forecast) / y_test)) * 100
+#         aic = result.aic  # Still keep AIC for reference
 
-        # Store results
-        results_list.append((params, aic, mae, rmse, mase, mape))
-        print(f"Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.4f}, RMSE: {rmse:.4f}, MASE: {mase:.4f}, MAPE: {mape:.2f}%")
+#         # Store results
+#         results_list.append((params, aic, mae, rmse, mase, mape))
+#         print(f"Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.4f}, RMSE: {rmse:.4f}, MASE: {mase:.4f}, MAPE: {mape:.2f}%")
         
-        # Select the best model based on the lowest MAE
-        if mae < best_metric:
-            best_metric = mae
-            best_params = params
+#         # Select the best model based on the lowest MAE
+#         if mae < best_metric:
+#             best_metric = mae
+#             best_params = params
 
-    except:
-        print(f"Failed to fit model for {params}")
-        continue  # Ignore models that fail to converge
+#     except:
+#         print(f"Failed to fit model for {params}")
+#         continue  # Ignore models that fail to converge
 
-# Sort results by MAE
-results_list.sort(key=lambda x: x[2])  # Sorting based on MAE
+# # Sort results by MAE
+# results_list.sort(key=lambda x: x[2])  # Sorting based on MAE
 
-# Display the top 10 best combinations based on AIC
-print("\nTop 10 parameter combinations based on MAE:")
-for i, (params, aic, mae, rmse, mase, mape) in enumerate(results_list[:10]):
-    print(f"{i+1}. Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.5f}, RMSE: {rmse:.5f}, MASE: {mase:.5f}, MAPE: {mape:.2f}%")
+# # Display the top 10 best combinations based on AIC
+# print("\nTop 10 parameter combinations based on MAE:")
+# for i, (params, aic, mae, rmse, mase, mape) in enumerate(results_list[:10]):
+#     print(f"{i+1}. Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.5f}, RMSE: {rmse:.5f}, MASE: {mase:.5f}, MAPE: {mape:.2f}%")
 
-print(f"\nBest order based on MAE: {best_params[:3]}, Best seasonal order: {best_params[3:]}, Lowest MAE: {best_metric:.5f}")
+# print(f"\nBest order based on MAE: {best_params[:3]}, Best seasonal order: {best_params[3:]}, Lowest MAE: {best_metric:.5f}")
 
 # Train the best SARIMAX Model
-best_model = SARIMAX(y_train, exog=X_train, order=best_params[:3], seasonal_order=best_params[3:])
+best_model = SARIMAX(y_train, exog=X_train, order=(3,2,3), seasonal_order=(3,1,3,4))
 best_result = best_model.fit()
 
 # Forecast with exogenous variables

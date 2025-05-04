@@ -57,15 +57,15 @@ const Home = () => {
         <div className="flex justify-center gap-8 mb-8">
           <ForecastCard
             title="Arabica Farmgate Price Forecast"
-            type="arabica"
+            type="Arabica"
           />
           <ForecastCard
             title="Excelsa Farmgate Price Forecast"
-            type="excelsa"
+            type="Excelsa"
           />
           <ForecastCard
             title="Robusta Farmgate Price Forecast"
-            type="robusta"
+            type="Robusta"
           />
         </div>
 

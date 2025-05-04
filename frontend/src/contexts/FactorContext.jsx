@@ -15,7 +15,9 @@ export const FactorProvider = ({ children }) => {
   // Upload a file into a factor
   const uploadFactor = (name, file) => {
     setFactors((prev) =>
-      prev.map((f) => (f.name === name ? { ...f, uploaded: true, file } : f))
+      prev.map((factor) =>
+        factor.name === name ? { ...factor, uploaded: true, file } : factor
+      )
     );
   };
 

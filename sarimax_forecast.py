@@ -1,111 +1,62 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import itertools
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 # Load dataset
-data = pd.read_csv("arabicacsv2.csv", parse_dates=["Date"], index_col="Date")
+data = pd.read_csv("arabicacsv3.csv", parse_dates=["Date"], index_col="Date")
 
-# Define target variable (Farmgate Price) and exogenous features
+# Define target variable
 y = data["Farmgate_Price"]
-X = data[["Production_Cost", "Net_Return", "Volume_Of_Production"]]
 
-# Split into training and testing
-train_size = int(len(y) * 0.8)  # 80% train, 20% test
+# Define exogenous variables
+exog_control = data[["Production_Cost", "Net_Return", "Volume_Of_Production"]]
+exog_experimental = data[["Production_Cost", "Net_Return", "Volume_Of_Production", "Inflation"]]
+
+# Split into training and testing sets
+train_size = int(len(y) * 0.8)
 y_train, y_test = y[:train_size], y[train_size:]
-X_train, X_test = X[:train_size], X[train_size:]
+X_control_train, X_control_test = exog_control[:train_size], exog_control[train_size:]
+X_experimental_train, X_experimental_test = exog_experimental[:train_size], exog_experimental[train_size:]
 
-# Define p, d, q, P, D, Q, s (seasonality) ranges
-p = d = q = range(0, 3)  # Extended range for better exploration
-P = D = Q = range(0, 3)
-s = [4]  # Seasonal period of 4
+# Function to train and evaluate SARIMAX model
+def train_evaluate_sarimax(y_train, y_test, exog_train, exog_test, order, seasonal_order, label):
+    model = SARIMAX(y_train, exog=exog_train, order=order, seasonal_order=seasonal_order)
+    result = model.fit(disp=False)
+    forecast = result.predict(start=len(y_train), end=len(y_train)+len(y_test)-1, exog=exog_test)
     
-# Generate all possible parameter combinations
-param_combinations = list(itertools.product(p, d, q, P, D, Q, s))
+    # Compute error metrics
+    mae = mean_absolute_error(y_test, forecast)
+    rmse = np.sqrt(mean_squared_error(y_test, forecast))
+    naive_forecast = np.abs(np.diff(y_test)).mean()
+    mase = mae / naive_forecast
+    mape = np.mean(np.abs((y_test - forecast) / y_test)) * 100
+    
+    # Print evaluation metrics
+    print(f"\n{label} Model Evaluation Metrics:")
+    print(f"AIC: {result.aic}")
+    print(f"MAE: {mae}")
+    print(f"RMSE: {rmse}")
+    print(f"MASE: {mase}")
+    print(f"MAPE: {mape:.2f}%")
+    
+    # Plot results
+    plt.figure(figsize=(10, 5))
+    plt.plot(y_test.index, y_test, label="Actual", color="blue")
+    plt.plot(y_test.index, forecast, label="Forecast", color="red", linestyle="dashed")
+    plt.legend()
+    plt.title(f"{label} - Farmgate Price Forecast")
+    plt.show()
+    
+    return result
 
-# Grid Search for the best SARIMAX model based on predictive performance
-best_metric = float("inf")
-best_params = None
-results_list = []
+# Train and evaluate Control Model
+control_order = (4, 2, 4)
+control_seasonal_order = (0, 1, 0, 4)
+control_result = train_evaluate_sarimax(y_train, y_test, X_control_train, X_control_test, control_order, control_seasonal_order, "Control")
 
-print("Evaluating different parameter combinations...\n")
-
-for params in param_combinations:
-    try:
-        model = SARIMAX(y_train, exog=X_train, order=params[:3], seasonal_order=params[3:])
-        result = model.fit(disp=False)
-        
-        # Forecast using test set
-        forecast = result.predict(start=len(y_train), end=len(y)-1, exog=X_test)
-
-        # Compute Error Metrics
-        mae = mean_absolute_error(y_test, forecast)
-        rmse = np.sqrt(mean_squared_error(y_test, forecast))
-        naive_forecast = np.abs(np.diff(y_test)).mean()
-        mase = mae / naive_forecast
-        mape = np.mean(np.abs((y_test - forecast) / y_test)) * 100
-        aic = result.aic  # Still keep AIC for reference
-
-        # Store results
-        results_list.append((params, aic, mae, rmse, mase, mape))
-        print(f"Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.4f}, RMSE: {rmse:.4f}, MASE: {mase:.4f}, MAPE: {mape:.2f}%")
-        
-        # Select the best model based on the lowest MAE
-        if mae < best_metric:
-            best_metric = mae
-            best_params = params
-
-    except:
-        print(f"Failed to fit model for {params}")
-        continue  # Ignore models that fail to converge
-
-# Sort results by MAE
-results_list.sort(key=lambda x: x[2])  # Sorting based on MAE
-
-# Display the top 10 best combinations based on AIC
-print("\nTop 10 parameter combinations based on MAE:")
-for i, (params, aic, mae, rmse, mase, mape) in enumerate(results_list[:10]):
-    print(f"{i+1}. Order: {params[:3]}, Seasonal Order: {params[3:]}, AIC: {aic:.2f}, MAE: {mae:.5f}, RMSE: {rmse:.5f}, MASE: {mase:.5f}, MAPE: {mape:.2f}%")
-
-print(f"\nBest order based on MAE: {best_params[:3]}, Best seasonal order: {best_params[3:]}, Lowest MAE: {best_metric:.5f}")
-
-# Train the best SARIMAX Model
-best_model = SARIMAX(y_train, exog=X_train, order=best_params[:3], seasonal_order=best_params[3:])
-best_result = best_model.fit()
-
-# Forecast with exogenous variables
-forecast = best_result.predict(start=len(y_train), end=len(y)-1, exog=X_test)
-
-# Compute final Error Metrics
-mae = mean_absolute_error(y_test, forecast)
-rmse = np.sqrt(mean_squared_error(y_test, forecast))
-naive_forecast = np.abs(np.diff(y_test)).mean()
-mase = mae / naive_forecast
-mape = np.mean(np.abs((y_test - forecast) / y_test)) * 100
-
-# Store final results
-best_model_results = {
-    'AIC': best_result.aic,
-    'MAE': mae,
-    'RMSE': rmse,
-    'MAPE': mape,
-    'MASE': mase
-}
-
-# Print final evaluation metrics
-print(f"\nFinal Evaluation Metrics for the Best Model:")
-print(f"AIC: {best_model_results['AIC']}")
-print(f"MAE: {best_model_results['MAE']}")
-print(f"RMSE: {best_model_results['RMSE']}")
-print(f"MASE: {best_model_results['MASE']}")
-print(f"MAPE: {best_model_results['MAPE']:.2f}%")
-
-# Plot Results
-plt.figure(figsize=(10, 5))
-plt.plot(y_test.index, y_test, label="Actual", color="blue")
-plt.plot(y_test.index, forecast, label="Forecast", color="red", linestyle="dashed")
-plt.legend()
-plt.title("Farmgate Price Forecast (control)")
-plt.show()
+# Train and evaluate Experimental Model
+experimental_order = (3, 2, 3)
+experimental_seasonal_order = (3, 1, 3, 4)
+experimental_result = train_evaluate_sarimax(y_train, y_test, X_experimental_train, X_experimental_test, experimental_order, experimental_seasonal_order, "Experimental")

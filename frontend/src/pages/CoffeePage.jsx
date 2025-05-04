@@ -1,28 +1,36 @@
 // src/pages/CoffeePage.jsx
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CommonFactors from "../components/CommonFactors";
 import DeleteModal from "../components/DeleteModal";
-import addIcon from "../assets/images/add-icon.png";
 import UploadModal from "../components/UploadModal";
 import { useFactors } from "../contexts/FactorContext";
 import { AnimatePresence, motion } from "framer-motion";
 import logo from "../assets/images/coffee-icon.png";
 import inventory from "../assets/images/inventory1.png";
+import axios from "axios";
+import addIcon from "../assets/images/add-icon.png";
 
-const CoffeePage = () => {
+export default function CoffeePage() {
   const { type } = useParams();
   const readable = type[0].toUpperCase() + type.slice(1);
+
+  // your three common factors from context:
   const { factors, uploadFactor, deleteFactor } = useFactors();
+
+  // instead of mainFactors-array-of-names, store file objects:
+  const [mainFiles, setMainFiles] = useState({});
+
+  // UI state:
   const [loadingFactor, setLoadingFactor] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFactor, setSelectedFactor] = useState(null);
-  const [mainFactors, setMainFactors] = useState([]);
   const [missingFactors, setMissingFactors] = useState([]);
   const [showMissingModal, setShowMissingModal] = useState(false);
+  const [forecastResult, setForecastResult] = useState(null);
 
   const requiredFactors = [
     `${readable} Farmgate Price`,
@@ -32,45 +40,32 @@ const CoffeePage = () => {
     "Production Cost",
   ];
 
-  const handleForecastClick = () => {
-    const uploadedFactors = [
-      ...mainFactors,
-      ...factors.filter((f) => f.uploaded).map((f) => f.name),
-    ];
-
-    const missing = requiredFactors.filter(
-      (factor) => !uploadedFactors.includes(factor)
-    );
-
-    if (missing.length > 0) {
-      setMissingFactors(missing);
-      setShowMissingModal(true);
-    } else {
-      console.log("All files uploaded, proceeding...");
-    }
-  };
-
+  // step 1: open the upload‐modal
   const handleUploadTrigger = (factorName) => {
     setSelectedFactor(factorName);
     setUploadModalOpen(true);
   };
 
+  // step 2: when the modal hands us back a real File
   const handleUpload = (name, file) => {
     setLoadingFactor(name);
     setTimeout(() => {
-      // Check if it's a main factor
+      // if it’s one of the two “main” cards, store in mainFiles:
       if (
         name.includes("Farmgate Price") ||
         name.includes("Production Volume")
       ) {
-        setMainFactors((prev) => [...prev, name]);
+        setMainFiles((prev) => ({ ...prev, [name]: file }));
       } else {
+        // otherwise it’s a “common” factor
         uploadFactor(name, file);
       }
       setLoadingFactor(null);
+      setUploadModalOpen(false);
     }, 800);
   };
 
+  // confirm ⇒ delete either from mainFiles or context
   const handleConfirmDelete = (name) => {
     setToDelete(name);
     setShowConfirm(true);
@@ -78,13 +73,13 @@ const CoffeePage = () => {
   const handleDelete = () => {
     setLoadingFactor(toDelete);
     setShowConfirm(false);
-
     setTimeout(() => {
       if (
         toDelete.includes("Farmgate Price") ||
         toDelete.includes("Production Volume")
       ) {
-        setMainFactors((prev) => prev.filter((item) => item !== toDelete));
+        const { [toDelete]: _, ...rest } = mainFiles;
+        setMainFiles(rest);
       } else {
         deleteFactor(toDelete);
       }
@@ -93,10 +88,53 @@ const CoffeePage = () => {
     }, 800);
   };
 
+  // finally pack up **all** of the File objects and POST
+  const handleForecastClick = async () => {
+    // build list of missing
+    const uploadedNames = [
+      ...Object.keys(mainFiles),
+      ...factors.filter((f) => f.uploaded).map((f) => f.name),
+    ];
+    const missing = requiredFactors.filter((f) => !uploadedNames.includes(f));
+    if (missing.length) {
+      setMissingFactors(missing);
+      setShowMissingModal(true);
+      return;
+    }
+
+    // all good, send them
+    const formData = new FormData();
+    // main files
+    Object.entries(mainFiles).forEach(([name, file]) =>
+      formData.append(name, file)
+    );
+    // common files
+    factors.forEach((f) => {
+      if (f.uploaded && f.file) {
+        formData.append(f.name, f.file);
+      }
+    });
+    formData.append("type", type);
+
+    try {
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+      const res = await axios.post("http://localhost:5001/forecast", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setForecastResult(res.data);
+    } catch (e) {
+      console.error(e.response?.data);
+      alert("Forecast failed bugok, see console");
+    }
+  };
+
   return (
     <div className="bg-background min-h-screen">
       <Navbar />
       <main className="px-8 py-12 mt-8 flex flex-col items-center gap-10">
+        {/* header + back‐arrow */}
         <div className="w-full max-w-6xl flex flex-col gap-3">
           <div className="flex items-center gap-4">
             <button onClick={() => window.history.back()}>
@@ -111,21 +149,26 @@ const CoffeePage = () => {
           <hr className="border-2 border-text w-full" />
         </div>
 
+        {/* the two “main” upload cards */}
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
           {[`${readable} Farmgate Price`, `${readable} Production Volume`].map(
             (label) => {
-              const isUploaded = mainFactors.includes(label);
+              const isUploaded = Boolean(mainFiles[label]);
               return (
                 <div
                   key={label}
-                  className={`relative bg-background text-text text-center rounded-md border-2 border-border p-6 flex flex-col items-center justify-center shadow transition w-full max-w-96 h-64 cursor-pointer ${
+                  className={`
+                  relative bg-background text-text text-center
+                  rounded-md border-2 border-border p-6
+                  flex flex-col items-center justify-center shadow
+                  transition w-full max-w-96 h-64 cursor-pointer
+                  ${
                     isUploaded
-                      ? "hover:scale-105 hover:shadow-lg hover:bg-primary bg-primary text-white"
-                      : "hover:scale-105 hover:shadow-lg hover:bg-primary hover:text-background"
-                  }`}
-                  onClick={() => {
-                    if (!isUploaded) handleUploadTrigger(label);
-                  }}
+                      ? "bg-primary text-white hover:bg-primary hover:text-white hover:shadow-lg"
+                      : "hover:bg-primary hover:text-background hover:scale-105"
+                  }
+                `}
+                  onClick={() => !isUploaded && handleUploadTrigger(label)}
                 >
                   <img
                     src={
@@ -135,13 +178,15 @@ const CoffeePage = () => {
                           : logo
                         : addIcon
                     }
-                    alt="Icon"
+                    alt=""
                     className="w-32 h-32 mb-4"
                   />
                   <h2 className="text-xl font-semibold mb-2">{label}</h2>
                   {isUploaded && (
                     <button
-                      className="absolute top-2 text-text right-2 bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white transition"
+                      className="absolute top-2 right-2 bg-white text-primary rounded-full w-6 h-6
+                               flex items-center justify-center shadow-md
+                               hover:bg-red-500 hover:text-white transition"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleConfirmDelete(label);
@@ -156,6 +201,7 @@ const CoffeePage = () => {
           )}
         </div>
 
+        {/* your three common factors */}
         <CommonFactors
           factors={factors}
           onUpload={handleUploadTrigger}
@@ -163,67 +209,108 @@ const CoffeePage = () => {
           loadingFactor={loadingFactor}
         />
 
+        {/* forecast button */}
         <div className="flex items-center gap-4 mt-6">
           <button
-            className="bg-highlights text-text px-[65px] py-2 rounded-full hover:bg-[#a19f43] transition hover:text-background"
+            className="bg-highlights text-text px-[65px] py-2 rounded-full
+                       hover:bg-[#a19f43] transition hover:text-background"
             onClick={handleForecastClick}
           >
             Forecast
           </button>
-          <button className="opacity-0 pointer-events-none">×</button>
         </div>
+
+        {/* show results */}
+        {forecastResult && (
+          <div className="bg-white text-black p-4 rounded shadow max-w-2xl">
+            <h2 className="text-xl font-bold mb-2">Forecast Results</h2>
+            {["MAE", "RMSE", "MAPE", "MASE"].map((m) => (
+              <p key={m}>
+                {m}:{" "}
+                {forecastResult.control_model[m]?.toFixed(m === "MAPE" ? 2 : 4)}
+                {m === "MAPE" ? "%" : ""}
+              </p>
+            ))}
+            <img
+              src={`data:image/png;base64,${forecastResult.control_model.forecast_plot}`}
+              alt="Control forecast"
+              className="mt-4 w-full max-w-lg"
+            />
+            <hr className="my-4" />
+            <h3 className="font-bold">Experimental:</h3>
+            {["MAE", "RMSE", "MAPE", "MASE"].map((m) => (
+              <p key={m}>
+                {m}:{" "}
+                {forecastResult.experimental_model[m]?.toFixed(
+                  m === "MAPE" ? 2 : 4
+                )}
+                {m === "MAPE" ? "%" : ""}
+              </p>
+            ))}
+            <img
+              src={`data:image/png;base64,${forecastResult.experimental_model.forecast_plot}`}
+              alt="Experimental forecast"
+              className="mt-4 w-full max-w-lg"
+            />
+          </div>
+        )}
       </main>
 
-      {/* Delete Modal */}
+      {/* DELETE confirmation */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex
+                       items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
             <DeleteModal
-              isOpen={showConfirm}
+              isOpen={true}
+              fileName={toDelete}
               onClose={() => setShowConfirm(false)}
               onConfirm={handleDelete}
-              fileName={toDelete}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Upload Modal (with animation) */}
+      {/* UPLOAD modal */}
       <AnimatePresence>
         {uploadModalOpen && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex
+                       items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
             <UploadModal
-              isOpen={uploadModalOpen}
+              isOpen={true}
+              factorName={selectedFactor}
               onClose={() => setUploadModalOpen(false)}
               onUpload={handleUpload}
-              factorName={selectedFactor}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* MISSING‐FILES warning */}
       <AnimatePresence>
         {showMissingModal && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex
+                       items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
             <div className="bg-[#FFF9EC] rounded-md shadow-lg w-full max-w-3xl">
+              {/* header */}
               {/* Header */}
               <div className="bg-[#5C4033] text-white px-6 py-4 flex justify-between items-center rounded-t-md">
                 <h2 className="text-xl font-semibold">Incomplete Data</h2>
@@ -234,8 +321,7 @@ const CoffeePage = () => {
                   ×
                 </button>
               </div>
-
-              {/* Content */}
+              {/* list */}
               <div className="px-3 py-3">
                 <div className="border-2 border-[#5C4033] px-6 py-10 rounded">
                   <h2 className="text-2xl font-bold mb-2 text-[#4d2d1c]">
@@ -263,6 +349,4 @@ const CoffeePage = () => {
       </AnimatePresence>
     </div>
   );
-};
-
-export default CoffeePage;
+}
