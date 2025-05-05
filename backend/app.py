@@ -112,6 +112,8 @@ def run_forecast(merged_df):
 
             # Plot
             fig, ax = plt.subplots(figsize=(10,5))
+            fig.patch.set_facecolor('#F1F0E2')
+            ax.set_facecolor('#F1F0E2')  
             ax.plot(y_test.index, y_test, label='Actual', color='blue')
             ax.plot(y_test.index, forecast, label='Forecast', color='red', linestyle='dashed')
             ax.set_title(f'{label} - Farmgate Price Forecast')
@@ -132,10 +134,68 @@ def run_forecast(merged_df):
                 'MASE': mase,
                 'MAPE': mape,
                 'forecast_dates': y_test.index.strftime('%Y-%m-%d').tolist(),
+                'actual_values': y_test.tolist(),
                 'forecast_values': forecast.tolist(),
-                'forecast_plot': image_base64
+                
             }
+        
+        # # ---------- FUTURE FORECASTING ----------
+        # # Fit SARIMAX on full data
+        # control_model_full = SARIMAX(y, exog=exog_control, order=control_order, seasonal_order=control_seasonal_order)
+        # control_fit_full = control_model_full.fit(disp=False)
 
+        # experimental_model_full = SARIMAX(y, exog=exog_experimental, order=experimental_order, seasonal_order=experimental_seasonal_order)
+        # experimental_fit_full = experimental_model_full.fit(disp=False)
+
+        # # Forecast exogenous variables for next 8 steps (2 years = 8 quarters)
+        # # For simplicity → we can carry forward last values or set as mean for now
+        # future_exog_control = pd.DataFrame({
+        #     'Production Cost': [exog_control['Production Cost'].iloc[-1]] * 8,
+        #     'Net Return': [exog_control['Net Return'].iloc[-1]] * 8,
+        #     'Production Volume': [exog_control['Production Volume'].iloc[-1]] * 8
+        # })
+
+        # future_exog_experimental = future_exog_control.copy()
+        # future_exog_experimental['Inflation rate'] = [exog_experimental['Inflation rate'].iloc[-1]] * 8
+
+        # # Future index
+        # future_dates = pd.date_range(start=y.index[-1] + pd.offsets.QuarterEnd(), periods=8, freq='Q')
+
+        # # Forecast farmgate price for next 2 years
+        # control_future_forecast = control_fit_full.forecast(steps=8, exog=future_exog_control)
+        # experimental_future_forecast = experimental_fit_full.forecast(steps=8, exog=future_exog_experimental)
+
+        # def plot_future_forecast(forecast_values, forecast_dates, label):
+        #     fig, ax = plt.subplots(figsize=(10,5))
+        #     fig.patch.set_facecolor('#F1F0E2')
+        #     ax.set_facecolor('#F1F0E2')
+        #     ax.plot(y.index, y, label='Historical', color='blue')
+        #     ax.plot(forecast_dates, forecast_values, label='Forecast', color='red', linestyle='dashed')
+        #     ax.set_title(f'{label} - 2-Year Forecast (Future)')
+        #     ax.legend()
+
+        #     buf = io.BytesIO()
+        #     plt.savefig(buf, format='png')
+        #     plt.close(fig)
+        #     buf.seek(0)
+        #     image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+        #     buf.close()
+        #     return image_base64
+        
+        # control_future_plot = plot_future_forecast(control_future_forecast, future_dates, "Control")
+        # experimental_future_plot = plot_future_forecast(experimental_future_forecast, future_dates, "Experimental")
+
+        # # Append future results
+        # control_result['future_forecast_dates'] = future_dates.strftime('%Y-%m-%d').tolist()
+        # control_result['future_forecast_values'] = control_future_forecast.tolist()
+        # control_result['future_forecast_plot'] = control_future_plot
+
+        # experimental_result['future_forecast_dates'] = future_dates.strftime('%Y-%m-%d').tolist()
+        # experimental_result['future_forecast_values'] = experimental_future_forecast.tolist()
+        # experimental_result['future_forecast_plot'] = experimental_future_plot
+
+
+        
         # Run models
         control_result = fit_sarimax(y_train, y_test, X_control_train, X_control_test, control_order, control_seasonal_order, "Control")
         experimental_result = fit_sarimax(y_train, y_test, X_experimental_train, X_experimental_test, experimental_order, experimental_seasonal_order, "Experimental")

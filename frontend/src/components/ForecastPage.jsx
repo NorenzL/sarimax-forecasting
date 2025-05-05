@@ -38,11 +38,9 @@ function ForecastPage() {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((response) => {
+        // Instead of setting local result → navigate to result page
+        navigate("/forecast-result", { state: { result: response.data } });
         setLoading(false);
-        // ✅ instead of setting local state, navigate to result page
-        navigate("/forecast-result", {
-          state: { forecastResult: response.data },
-        });
       })
       .catch((error) => {
         console.error("Error fetching forecast:", error);

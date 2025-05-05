@@ -31,6 +31,7 @@ export default function CoffeePage() {
   const [missingFactors, setMissingFactors] = useState([]);
   const [showMissingModal, setShowMissingModal] = useState(false);
   const [forecastResult, setForecastResult] = useState(null);
+  const navigate = useNavigate();
 
   const requiredFactors = [
     `${readable} Farmgate Price`,
@@ -120,10 +121,18 @@ export default function CoffeePage() {
       for (let pair of formData.entries()) {
         console.log(pair[0], pair[1]);
       }
-      const res = await axios.post("http://localhost:5001/forecast", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setForecastResult(res.data);
+      const res = await axios
+        .post("http://localhost:5001/forecast", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then((response) => {
+          navigate("/forecast-result", {
+            state: { forecastResult: response.data },
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching forecast:", error);
+        });
     } catch (e) {
       console.error(e.response?.data);
       alert("Forecast failed bugok, see console");
@@ -219,41 +228,6 @@ export default function CoffeePage() {
             Forecast
           </button>
         </div>
-
-        {/* show results */}
-        {forecastResult && (
-          <div className="bg-white text-black p-4 rounded shadow max-w-2xl">
-            <h2 className="text-xl font-bold mb-2">Forecast Results</h2>
-            {["MAE", "RMSE", "MAPE", "MASE"].map((m) => (
-              <p key={m}>
-                {m}:{" "}
-                {forecastResult.control_model[m]?.toFixed(m === "MAPE" ? 2 : 4)}
-                {m === "MAPE" ? "%" : ""}
-              </p>
-            ))}
-            <img
-              src={`data:image/png;base64,${forecastResult.control_model.forecast_plot}`}
-              alt="Control forecast"
-              className="mt-4 w-full max-w-lg"
-            />
-            <hr className="my-4" />
-            <h3 className="font-bold">Experimental:</h3>
-            {["MAE", "RMSE", "MAPE", "MASE"].map((m) => (
-              <p key={m}>
-                {m}:{" "}
-                {forecastResult.experimental_model[m]?.toFixed(
-                  m === "MAPE" ? 2 : 4
-                )}
-                {m === "MAPE" ? "%" : ""}
-              </p>
-            ))}
-            <img
-              src={`data:image/png;base64,${forecastResult.experimental_model.forecast_plot}`}
-              alt="Experimental forecast"
-              className="mt-4 w-full max-w-lg"
-            />
-          </div>
-        )}
       </main>
 
       {/* DELETE confirmation */}
