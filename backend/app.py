@@ -4,11 +4,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
+import gc
 import base64
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import grangercausalitytests
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from functools import reduce
+import tkinter as tk
 
 
 app = Flask(__name__)
@@ -98,10 +101,11 @@ def forecast():
         print("Merged DataFrame:")
         print(merged_df)
 
+
         # ✅ Call your forecast logic
         result = run_forecast(merged_df, coffee_type, coffee_settings)
-       
         return jsonify(result)
+    
     
     except Exception as e:
         print(f"Exception occurred: {e}")
@@ -113,6 +117,20 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
         merged_df['date'] = pd.to_datetime(merged_df['date'])
         merged_df = merged_df.sort_values('date')
         merged_df = merged_df.set_index('date')
+
+        granger_df = merged_df[['Farmgate Price', 'Inflation rate']].dropna()
+        max_lag = 8  # adjust lag based on data frequency
+
+        print("\n[INFO] Running Granger Causality Test (Inflation rate → Farmgate Price)...")
+        granger_result = grangercausalitytests(granger_df[['Farmgate Price', 'Inflation rate']], maxlag=max_lag, verbose=False)
+
+        # Extract p-values
+        granger_pvalues = {f'lag_{lag}': round(res[0]['ssr_ftest'][1], 4) for lag, res in granger_result.items()}
+
+        print("[INFO] Granger causality test p-values:")
+        for lag, pval in granger_pvalues.items():
+            print(f"{lag}: p-value = {pval}")
+
 
         # Define target variable (Farmgate Price)
         y = merged_df['Farmgate Price']
@@ -158,14 +176,9 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             ax.set_title(f'{label} - Farmgate Price Forecast')
             ax.legend()
 
-            # Save plot to in-memory buffer
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png')
             plt.close(fig)
-            buf.seek(0)
-            image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-            buf.close()
 
+            
             return {
                 'AIC': result.aic,
                 'MAE': mae,
@@ -174,8 +187,7 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
                 'MAPE': mape,
                 'forecast_dates': y_test.index.strftime('%Y-%m-%d').tolist(),
                 'actual_values': y_test.tolist(),
-                'forecast_values': forecast.tolist(),
-                
+                'forecast_values': forecast.tolist(),  
             }
         
         # Run models
@@ -274,12 +286,16 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             'Experimental',
         )
 
+        gc.collect()
+
         return {
             'control_model': control_result,
             'experimental_model': experimental_result,
             'control_future_forecast': control_future_result,
-            'experimental_future_forecast': experimental_future_result
-        }
+            'experimental_future_forecast': experimental_future_result,
+            'granger_causality_pvalues': granger_pvalues,
+            'coffee_type': coffee_type,
+        }  
 
     except Exception as e:
         return {'error': str(e)}
