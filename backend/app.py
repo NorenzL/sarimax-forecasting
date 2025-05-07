@@ -25,6 +25,40 @@ def forecast():
         if not coffee_type:
             return jsonify({'error': 'Missing coffee type'}), 400
 
+        coffee_settings = {
+            'Arabica': {
+                'farmgate': f"{coffee_type} Farmgate Price",
+                'volume': f"{coffee_type} Production Volume",
+                'control_order': (4, 2, 4),
+                'control_seasonal': (0, 1, 0, 4),
+                'experimental_order': (3, 2, 3),
+                'experimental_seasonal': (3, 1, 3, 4),
+                'volume_order': (0, 0, 0),
+                'volume_seasonal': (1, 0, 2, 4)
+            },
+            'Excelsa': {
+                'farmgate': f"{coffee_type} Farmgate Price",
+                'volume': f"{coffee_type} Production Volume",
+                'control_order': (2, 2, 1),
+                'control_seasonal': (0, 0, 4, 4),
+                'experimental_order': (3, 0, 3),
+                'experimental_seasonal': (4, 0, 4, 4),
+                'volume_order': (3, 0, 2),
+                'volume_seasonal': (0, 1, 4, 4)
+            },
+            'Robusta': {
+                'farmgate': f"{coffee_type} Farmgate Price",
+                'volume': f"{coffee_type} Production Volume",
+                'control_order': (2, 0, 0),
+                'control_seasonal': (1, 0, 2, 4),
+                'experimental_order': (0, 2, 3),
+                'experimental_seasonal': (4, 1, 4, 4),
+                'volume_order': (0, 0, 2),
+                'volume_seasonal': (4, 0, 1, 4)
+            }
+            
+        }
+
         # ✅ Dynamically build required file keys
         required_files = [
             f"{coffee_type} Farmgate Price",
@@ -65,26 +99,22 @@ def forecast():
         print(merged_df)
 
         # ✅ Call your forecast logic
-        result = run_forecast(merged_df)
-        #future_result = run_future_forecast(merged_df)
+        result = run_forecast(merged_df, coffee_type, coffee_settings)
        
         return jsonify(result)
-        # return jsonify({
-        #     'result': result,
-        #     'future_result': future_result
-        # })
+    
     except Exception as e:
         print(f"Exception occurred: {e}")
         return jsonify({'error': str(e)}), 500
     
-def run_forecast(merged_df):
+def run_forecast(merged_df, coffee_type, coffee_settings):
     try:
         # Ensure 'date' column is datetime and set as index
         merged_df['date'] = pd.to_datetime(merged_df['date'])
         merged_df = merged_df.sort_values('date')
         merged_df = merged_df.set_index('date')
 
-        # Define target variable
+        # Define target variable (Farmgate Price)
         y = merged_df['Farmgate Price']
 
         # Define exogenous variables
@@ -97,11 +127,14 @@ def run_forecast(merged_df):
         X_control_train, X_control_test = exog_control[:train_size], exog_control[train_size:]
         X_experimental_train, X_experimental_test = exog_experimental[:train_size], exog_experimental[train_size:]
 
-        # Define SARIMAX parameters
-        control_order = (4, 2, 4)
-        control_seasonal_order = (0, 1, 0, 4)
-        experimental_order = (3, 2, 3)
-        experimental_seasonal_order = (3, 1, 3, 4)
+        # Define parameters
+        coffee_config = coffee_settings[coffee_type]
+        control_order = coffee_config['control_order']
+        control_seasonal_order = coffee_config['control_seasonal']
+        experimental_order = coffee_config['experimental_order']
+        experimental_seasonal_order = coffee_config['experimental_seasonal']
+        volume_order = coffee_config['volume_order']
+        volume_seasonal = coffee_config['volume_seasonal']
 
         # Function to fit and evaluate SARIMAX
         def fit_sarimax(y_train, y_test, X_train, X_test, order, seasonal_order, label):
@@ -150,7 +183,7 @@ def run_forecast(merged_df):
         experimental_result = fit_sarimax(y_train, y_test, X_experimental_train, X_experimental_test, experimental_order, experimental_seasonal_order, "Experimental")
 
                 # =================== ADDITIONAL FUTURE FORECAST ===================
-        def future_forecast(x_price, exog_vars, exog_columns, order, seasonal_order, label):
+        def future_forecast(x_price, exog_vars, exog_columns, order, seasonal_order, volume_order, volume_seasonal, label):
             # Fit models for each exogenous variable
             exog_vars_subset = exog_vars[exog_columns]
             exog_forecasts = {}
@@ -162,7 +195,7 @@ def run_forecast(merged_df):
                 if col == 'Inflation rate':
                     model = ARIMA(exog_vars[col], order=(4, 0, 2))
                 elif col == 'Production Volume':
-                    model = SARIMAX(exog_vars[col], order=(0, 0, 0), seasonal_order=(1, 0, 2, 4))
+                    model = SARIMAX(exog_vars[col], order=volume_order, seasonal_order=volume_seasonal)
                 elif col == 'Production Cost':
                     model = SARIMAX(exog_vars[col], order=(0, 2, 2), seasonal_order=(2, 0, 1, 4))
                 elif col == 'Net Return':
@@ -225,7 +258,9 @@ def run_forecast(merged_df):
             ['Production Volume', 'Production Cost', 'Net Return'],
             control_order,
             control_seasonal_order,
-            'Control'
+            volume_order,
+            volume_seasonal,
+            'Control', 
         )
 
         experimental_future_result = future_forecast(
@@ -234,7 +269,9 @@ def run_forecast(merged_df):
             ['Inflation rate','Production Volume', 'Production Cost', 'Net Return'],
             experimental_order,
             experimental_seasonal_order,
-            'Experimental'
+            volume_order,
+            volume_seasonal,
+            'Experimental',
         )
 
         return {
