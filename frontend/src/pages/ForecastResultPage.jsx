@@ -70,7 +70,7 @@ function ForecastResultPage() {
                   {
                     label: "Forecast",
                     data: forecastResult.control_model.forecast_values,
-                    borderColor: "red",
+                    borderColor: "#680100",
                     fill: false,
                     tension: 0.1,
                     borderDash: [5, 5],
@@ -104,6 +104,33 @@ function ForecastResultPage() {
               </p>
             ))}
           </div>
+
+          {/* Future forecast control */}
+          <div className="mt-4 bg-background p-5 border-4 border-border rounded text-text">
+            <Line
+              data={{
+                labels: forecastResult.control_future_forecast.forecast_dates,
+                datasets: [
+                  {
+                    label: "Forecast",
+                    data: forecastResult.control_future_forecast
+                      .forecast_values,
+                    borderColor: "#680100",
+                    fill: false,
+                    tension: 0.1,
+                    borderDash: [5, 5],
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { position: "top" },
+                  title: { display: true, text: "Control Group Forecast" },
+                },
+              }}
+            />
+          </div>
         </div>
 
         {/* Experimental Group */}
@@ -119,7 +146,7 @@ function ForecastResultPage() {
                   {
                     label: "Forecast",
                     data: forecastResult.experimental_model.forecast_values,
-                    borderColor: "red",
+                    borderColor: "#680100",
                     fill: false,
                     tension: 0.1,
                     borderDash: [5, 5],
@@ -154,6 +181,34 @@ function ForecastResultPage() {
                 {m === "MAPE" ? "%" : ""}
               </p>
             ))}
+          </div>
+
+          {/* Future forecast experimental */}
+          <div className="mt-4 bg-background p-5 border-4 border-border rounded text-text">
+            <Line
+              data={{
+                labels:
+                  forecastResult.experimental_future_forecast.forecast_dates,
+                datasets: [
+                  {
+                    label: "Forecast",
+                    data: forecastResult.experimental_future_forecast
+                      .forecast_values,
+                    borderColor: "#680100",
+                    fill: false,
+                    tension: 0.1,
+                    borderDash: [5, 5],
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { position: "top" },
+                  title: { display: true, text: "Control Group Forecast" },
+                },
+              }}
+            />
           </div>
         </div>
       </div>

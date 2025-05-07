@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import io
 import base64
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from functools import reduce
@@ -65,8 +66,13 @@ def forecast():
 
         # ✅ Call your forecast logic
         result = run_forecast(merged_df)
-
+        #future_result = run_future_forecast(merged_df)
+       
         return jsonify(result)
+        # return jsonify({
+        #     'result': result,
+        #     'future_result': future_result
+        # })
     except Exception as e:
         print(f"Exception occurred: {e}")
         return jsonify({'error': str(e)}), 500
@@ -100,7 +106,7 @@ def run_forecast(merged_df):
         # Function to fit and evaluate SARIMAX
         def fit_sarimax(y_train, y_test, X_train, X_test, order, seasonal_order, label):
             model = SARIMAX(y_train, exog=X_train, order=order, seasonal_order=seasonal_order)
-            result = model.fit(disp=False)
+            result = model.fit()
             forecast = result.predict(start=len(y_train), end=len(y_train)+len(y_test)-1, exog=X_test)
 
             # Compute metrics
@@ -139,70 +145,103 @@ def run_forecast(merged_df):
                 
             }
         
-        # # ---------- FUTURE FORECASTING ----------
-        # # Fit SARIMAX on full data
-        # control_model_full = SARIMAX(y, exog=exog_control, order=control_order, seasonal_order=control_seasonal_order)
-        # control_fit_full = control_model_full.fit(disp=False)
-
-        # experimental_model_full = SARIMAX(y, exog=exog_experimental, order=experimental_order, seasonal_order=experimental_seasonal_order)
-        # experimental_fit_full = experimental_model_full.fit(disp=False)
-
-        # # Forecast exogenous variables for next 8 steps (2 years = 8 quarters)
-        # # For simplicity → we can carry forward last values or set as mean for now
-        # future_exog_control = pd.DataFrame({
-        #     'Production Cost': [exog_control['Production Cost'].iloc[-1]] * 8,
-        #     'Net Return': [exog_control['Net Return'].iloc[-1]] * 8,
-        #     'Production Volume': [exog_control['Production Volume'].iloc[-1]] * 8
-        # })
-
-        # future_exog_experimental = future_exog_control.copy()
-        # future_exog_experimental['Inflation rate'] = [exog_experimental['Inflation rate'].iloc[-1]] * 8
-
-        # # Future index
-        # future_dates = pd.date_range(start=y.index[-1] + pd.offsets.QuarterEnd(), periods=8, freq='Q')
-
-        # # Forecast farmgate price for next 2 years
-        # control_future_forecast = control_fit_full.forecast(steps=8, exog=future_exog_control)
-        # experimental_future_forecast = experimental_fit_full.forecast(steps=8, exog=future_exog_experimental)
-
-        # def plot_future_forecast(forecast_values, forecast_dates, label):
-        #     fig, ax = plt.subplots(figsize=(10,5))
-        #     fig.patch.set_facecolor('#F1F0E2')
-        #     ax.set_facecolor('#F1F0E2')
-        #     ax.plot(y.index, y, label='Historical', color='blue')
-        #     ax.plot(forecast_dates, forecast_values, label='Forecast', color='red', linestyle='dashed')
-        #     ax.set_title(f'{label} - 2-Year Forecast (Future)')
-        #     ax.legend()
-
-        #     buf = io.BytesIO()
-        #     plt.savefig(buf, format='png')
-        #     plt.close(fig)
-        #     buf.seek(0)
-        #     image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-        #     buf.close()
-        #     return image_base64
-        
-        # control_future_plot = plot_future_forecast(control_future_forecast, future_dates, "Control")
-        # experimental_future_plot = plot_future_forecast(experimental_future_forecast, future_dates, "Experimental")
-
-        # # Append future results
-        # control_result['future_forecast_dates'] = future_dates.strftime('%Y-%m-%d').tolist()
-        # control_result['future_forecast_values'] = control_future_forecast.tolist()
-        # control_result['future_forecast_plot'] = control_future_plot
-
-        # experimental_result['future_forecast_dates'] = future_dates.strftime('%Y-%m-%d').tolist()
-        # experimental_result['future_forecast_values'] = experimental_future_forecast.tolist()
-        # experimental_result['future_forecast_plot'] = experimental_future_plot
-
-
-        
         # Run models
         control_result = fit_sarimax(y_train, y_test, X_control_train, X_control_test, control_order, control_seasonal_order, "Control")
         experimental_result = fit_sarimax(y_train, y_test, X_experimental_train, X_experimental_test, experimental_order, experimental_seasonal_order, "Experimental")
 
+                # =================== ADDITIONAL FUTURE FORECAST ===================
+        def future_forecast(x_price, exog_vars, exog_columns, order, seasonal_order, label):
+            # Fit models for each exogenous variable
+            exog_vars_subset = exog_vars[exog_columns]
+            exog_forecasts = {}
+            forecast_steps = 8
+            last_date = exog_vars.index[-1]
+            future_dates = pd.date_range(start=last_date + pd.offsets.QuarterBegin(), periods=forecast_steps, freq='Q')
+
+            for col in exog_columns:
+                if col == 'Inflation rate':
+                    model = ARIMA(exog_vars[col], order=(4, 0, 2))
+                elif col == 'Production Volume':
+                    model = SARIMAX(exog_vars[col], order=(0, 0, 0), seasonal_order=(1, 0, 2, 4))
+                elif col == 'Production Cost':
+                    model = SARIMAX(exog_vars[col], order=(0, 2, 2), seasonal_order=(2, 0, 1, 4))
+                elif col == 'Net Return':
+                    model = SARIMAX(exog_vars[col], order=(3, 0, 1), seasonal_order=(3, 2, 3, 4))
+                else:
+                    raise ValueError(f"Unknown column '{col}' for modeling.")
+                result = model.fit()
+                forecast = result.forecast(steps=forecast_steps)
+                exog_forecasts[col] = forecast
+
+            # Combine future exog forecasts into DataFrame
+            exog_forecast_df = pd.concat([exog_forecasts[col] for col in exog_columns], axis=1)
+            exog_forecast_df.columns = exog_columns
+            exog_forecast_df.index = future_dates
+
+            print("\n[INFO] Exogenous variables used for price forecast:")
+            print(exog_forecast_df.columns.tolist())
+
+            print("\n[INFO] Forecasted values for exogenous variables:")
+            print(exog_forecast_df)
+
+            # Fit SARIMAX for Farmgate Price
+            model_price = SARIMAX(x_price, exog=exog_vars_subset, order=order, seasonal_order=seasonal_order)
+            result_price = model_price.fit()
+
+            # Forecast Farmgate Price
+            forecast_price = result_price.forecast(steps=forecast_steps, exog=exog_forecast_df)
+
+            # DEBUG PRINT: Farmgate Price forecast values
+            print("\n[INFO] Forecasted Farmgate Prices:")
+            for date, value in zip(future_dates, forecast_price):
+                print(f"{date.strftime('%Y-%m-%d')}: {value:.2f}")
+
+            # Plot
+            fig, ax = plt.subplots(figsize=(10, 5))
+            fig.patch.set_facecolor('#F1F0E2')
+            ax.set_facecolor('#F1F0E2')
+            ax.plot(x_price.index, x_price, label='Historical Farmgate Price', color='blue')
+            ax.plot(future_dates, forecast_price, label='Forecasted Farmgate Price (Future)', color='green', linestyle='dashed')
+            ax.set_title(f'{label} - 2-Year Forecast')
+            ax.legend()
+
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png')
+            plt.close(fig)
+            buf.seek(0)
+            image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+            buf.close()
+
+            return {
+                'forecast_dates': future_dates.strftime('%Y-%m-%d').tolist(),
+                'forecast_values': forecast_price.tolist(),
+                'plot': image_base64
+            }
+
+        # Run future forecasts
+        control_future_result = future_forecast(
+            y,
+            exog_control,
+            ['Production Volume', 'Production Cost', 'Net Return'],
+            control_order,
+            control_seasonal_order,
+            'Control'
+        )
+
+        experimental_future_result = future_forecast(
+            y,
+            exog_experimental,
+            ['Inflation rate','Production Volume', 'Production Cost', 'Net Return'],
+            experimental_order,
+            experimental_seasonal_order,
+            'Experimental'
+        )
+
         return {
             'control_model': control_result,
-            'experimental_model': experimental_result
+            'experimental_model': experimental_result,
+            'control_future_forecast': control_future_result,
+            'experimental_future_forecast': experimental_future_result
         }
 
     except Exception as e:
