@@ -35,7 +35,7 @@ const CommonFactors = ({
         const base = "border-2 border-border px-4 py-2 rounded transition-all";
         const inactive =
           "bg-background text-text hover:bg-primary hover:text-background";
-        const active = "bg-primary text-background hover:bg-text";
+        const active = "bg-primary text-background";
 
         return (
           <div
@@ -45,6 +45,7 @@ const CommonFactors = ({
             {/* Hidden file input */}
             <button
               onClick={() => onUpload(factor.name)}
+              disabled={factor.uploaded || isLoading}
               className={`${base} ${
                 factor.uploaded ? active : inactive
               } min-w-[12rem] text-center flex justify-center items-center`}

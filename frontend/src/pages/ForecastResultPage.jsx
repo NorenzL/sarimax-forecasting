@@ -29,7 +29,6 @@ function ForecastResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const forecastResult = location.state?.forecastResult;
-  const [showHelp, setShowHelp] = useState(false);
 
   if (!forecastResult) {
     return (
@@ -64,6 +63,9 @@ function ForecastResultPage() {
           <div className="relative group">
             <img src={helpIcon} alt="Help" className="w-8 h-8" />
             <span className="absolute right-5 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 bg-background text-primary text-xs rounded py-1 px-3 w-48 border-2 border-secondary">
+              Lower values (closer to 0) mean better performance.
+              <br />
+              <br />
               MAE: Average absolute difference between predicted and actual
               values.
               <br />
@@ -83,7 +85,7 @@ function ForecastResultPage() {
           <button>
             <img src={historyIcon} alt="History" className="w-8 h-8" />
           </button>
-          <button className="bg-highlights text-background px-3 py-1 rounded">
+          <button className="bg-highlights text-primary font-bold px-3 py-1 rounded hover:bg-[#a19f43] transition hover:text-background">
             Update Forecast
           </button>
         </div>
