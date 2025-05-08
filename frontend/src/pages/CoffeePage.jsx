@@ -11,6 +11,7 @@ import logo from "../assets/images/coffee-icon.png";
 import inventory from "../assets/images/inventory1.png";
 import axios from "axios";
 import addIcon from "../assets/images/add-icon.png";
+import FullPageSpinner from "../components/FullPageSpinner";
 
 export default function CoffeePage() {
   const { type } = useParams();
@@ -31,6 +32,7 @@ export default function CoffeePage() {
   const [missingFactors, setMissingFactors] = useState([]);
   const [showMissingModal, setShowMissingModal] = useState(false);
   const [forecastResult, setForecastResult] = useState(null);
+  const [isForecasting, setIsForecasting] = useState(false);
   const navigate = useNavigate();
 
   const requiredFactors = [
@@ -121,6 +123,7 @@ export default function CoffeePage() {
       for (let pair of formData.entries()) {
         console.log(pair[0], pair[1]);
       }
+      setIsForecasting(true);
       const res = await axios
         .post("http://localhost:5001/forecast", formData, {
           headers: { "Content-Type": "multipart/form-data" },
@@ -136,6 +139,8 @@ export default function CoffeePage() {
     } catch (e) {
       console.error(e.response?.data);
       alert("Forecast failed bugok, see console");
+    } finally {
+      setIsForecasting(false);
     }
   };
 
@@ -166,15 +171,16 @@ export default function CoffeePage() {
               return (
                 <div
                   key={label}
+                  disabled={isUploaded}
                   className={`
                   relative bg-background text-text text-center
                   rounded-md border-2 border-border p-6
                   flex flex-col items-center justify-center shadow
-                  transition w-full max-w-96 h-64 cursor-pointer
+                  transition w-full max-w-96 h-64 
                   ${
                     isUploaded
                       ? "bg-primary text-white hover:bg-primary hover:text-white hover:shadow-lg"
-                      : "hover:bg-primary hover:text-background hover:scale-105"
+                      : "hover:bg-primary hover:text-background hover:scale-105 cursor-pointer"
                   }
                 `}
                   onClick={() => !isUploaded && handleUploadTrigger(label)}
@@ -321,6 +327,7 @@ export default function CoffeePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      {isForecasting && <FullPageSpinner />}
     </div>
   );
 }
