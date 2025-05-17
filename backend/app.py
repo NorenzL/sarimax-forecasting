@@ -119,17 +119,17 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
         merged_df = merged_df.set_index('date')
 
         granger_df = merged_df[['Farmgate Price', 'Inflation rate']].dropna()
-        max_lag = 8  # adjust lag based on data frequency
+        max_lag = 4 # adjust lag based on data frequency
 
         print("\n[INFO] Running Granger Causality Test (Inflation rate → Farmgate Price)...")
         granger_result = grangercausalitytests(granger_df[['Farmgate Price', 'Inflation rate']], maxlag=max_lag, verbose=False)
 
         # Extract p-values
-        granger_pvalues = {f'lag_{lag}': round(res[0]['ssr_ftest'][1], 4) for lag, res in granger_result.items()}
+        granger_pvalues = {f'lag {lag}': round(res[0]['ssr_ftest'][1], 4) for lag, res in granger_result.items()}
 
         print("[INFO] Granger causality test p-values:")
         for lag, pval in granger_pvalues.items():
-            print(f"{lag}: p-value = {pval}")
+            print(f"{lag}: {pval}")
 
 
         # Define target variable (Farmgate Price)
@@ -209,9 +209,9 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
                 elif col == 'Production Volume':
                     model = SARIMAX(exog_vars[col], order=volume_order, seasonal_order=volume_seasonal)
                 elif col == 'Production Cost':
-                    model = SARIMAX(exog_vars[col], order=(0, 2, 2), seasonal_order=(2, 0, 1, 4))
+                    model = ARIMA(exog_vars[col], order=(3, 2, 3))
                 elif col == 'Net Return':
-                    model = SARIMAX(exog_vars[col], order=(3, 0, 1), seasonal_order=(3, 2, 3, 4))
+                    model = ARIMA(exog_vars[col], order=(3, 2, 4))
                 else:
                     raise ValueError(f"Unknown column '{col}' for modeling.")
                 result = model.fit()
@@ -295,6 +295,7 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             'experimental_future_forecast': experimental_future_result,
             'granger_causality_pvalues': granger_pvalues,
             'coffee_type': coffee_type,
+            'granger_pvalues': granger_pvalues,
         }  
 
     except Exception as e:
