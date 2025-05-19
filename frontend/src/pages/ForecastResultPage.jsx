@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import helpIcon from "../assets/images/help.png";
 import historyIcon from "../assets/images/history.png";
+import ForecastDisplay from "../pages/ForecastDisplay";
 
 ChartJS.register(
   LineElement,
@@ -78,11 +79,14 @@ function ForecastResultPage() {
               <br />
               MAPE: Average percentage error of forecasts.
               <br /> <br />
-              Granger Causality: Tests if one time series can predict another
+              Granger Causality: Tests if one time series can predict another if
+              value is less than 0.05
             </span>
           </div>
 
-          <button>
+          <button
+            onClick={() => navigate(`/history/${forecastResult.coffee_type}`)}
+          >
             <img src={historyIcon} alt="History" className="w-8 h-8" />
           </button>
           <button className="bg-highlights text-primary font-bold px-3 py-1 rounded hover:bg-[#a19f43] transition hover:text-background">
@@ -91,168 +95,7 @@ function ForecastResultPage() {
         </div>
       </header>
 
-      <div className="flex gap-4 justify-center">
-        {/* Control Group */}
-        <div className="bg-primary text-black rounded border-2 border-secondary p-4 shadow w-1/2">
-          <h3 className="font-bold mb-2 text-xl text-background">
-            Control Group Forecast
-          </h3>
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <Line
-              data={{
-                labels: forecastResult.control_model.forecast_dates,
-                datasets: [
-                  {
-                    label: "Forecast",
-                    data: forecastResult.control_model.forecast_values,
-                    borderColor: "#680100",
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [5, 5],
-                  },
-                  {
-                    label: "Actual",
-                    data: forecastResult.control_model.actual_values ?? [], // you need to pass actual values if available
-                    borderColor: "#A47863",
-                    fill: false,
-                    tension: 0.1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: "top" },
-                  title: { display: true, text: "Control Group Forecast" },
-                },
-              }}
-            />
-          </div>
-
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <h2 className="font-bold text-xl">Evaluation:</h2>
-            {["MAE", "RMSE", "MASE", "MAPE"].map((m) => (
-              <p key={m}>
-                {m}:{" "}
-                {forecastResult.control_model[m]?.toFixed(m === "MAPE" ? 2 : 4)}
-                {m === "MAPE" ? "%" : ""}
-              </p>
-            ))}
-          </div>
-
-          {/* Future forecast control */}
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <h2 className="font-bold text-xl text-center">
-              Forecast for 2 years
-            </h2>
-            <Line
-              data={{
-                labels: forecastResult.control_future_forecast.forecast_dates,
-                datasets: [
-                  {
-                    label: "Forecast",
-                    data: forecastResult.control_future_forecast
-                      .forecast_values,
-                    borderColor: "#680100",
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [5, 5],
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: "top" },
-                  title: { display: true, text: "Control Group Forecast" },
-                },
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Experimental Group */}
-        <div className="bg-primary text-black rounded border-2 border-secondary p-4 shadow w-1/2">
-          <h3 className="font-bold mb-2 text-xl text-background">
-            Experimental Group Forecast
-          </h3>
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <Line
-              data={{
-                labels: forecastResult.experimental_model.forecast_dates,
-                datasets: [
-                  {
-                    label: "Forecast",
-                    data: forecastResult.experimental_model.forecast_values,
-                    borderColor: "#680100",
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [5, 5],
-                  },
-                  {
-                    label: "Actual",
-                    data: forecastResult.experimental_model.actual_values ?? [], // optional
-                    borderColor: "#A47863",
-                    fill: false,
-                    tension: 0.1,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: "top" },
-                  title: { display: true, text: "Experimental Group Forecast" },
-                },
-              }}
-            />
-          </div>
-
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <h2 className="font-bold text-xl">Evaluation:</h2>
-            {["MAE", "RMSE", "MASE", "MAPE"].map((m) => (
-              <p key={m}>
-                {m}:{" "}
-                {forecastResult.experimental_model[m]?.toFixed(
-                  m === "MAPE" ? 2 : 4
-                )}
-                {m === "MAPE" ? "%" : ""}
-              </p>
-            ))}
-          </div>
-
-          {/* Future forecast experimental */}
-          <div className="mt-4 bg-background p-5 border-4 border-secondary rounded text-text">
-            <h2 className="font-bold text-xl text-center">
-              Forecast for 2 years
-            </h2>
-            <Line
-              data={{
-                labels:
-                  forecastResult.experimental_future_forecast.forecast_dates,
-                datasets: [
-                  {
-                    label: "Forecast",
-                    data: forecastResult.experimental_future_forecast
-                      .forecast_values,
-                    borderColor: "#680100",
-                    fill: false,
-                    tension: 0.1,
-                    borderDash: [5, 5],
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: "top" },
-                  title: { display: true, text: "Control Group Forecast" },
-                },
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      <ForecastDisplay forecastResult={forecastResult} />
     </div>
   );
 }

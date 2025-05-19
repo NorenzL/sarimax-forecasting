@@ -12,6 +12,9 @@ from statsmodels.tsa.stattools import grangercausalitytests
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from functools import reduce
 import tkinter as tk
+import os
+import json
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -104,6 +107,8 @@ def forecast():
 
         # ✅ Call your forecast logic
         result = run_forecast(merged_df, coffee_type, coffee_settings)
+
+        save_to_history(result)
         return jsonify(result)
     
     
@@ -301,5 +306,36 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
     except Exception as e:
         return {'error': str(e)}
 
+def save_to_history(result):
+    history_file = 'forecast_history.json'
+    try:
+        if os.path.exists(history_file):
+            with open(history_file, 'r') as f:
+                history = json.load(f)
+        else:
+            history = []
+
+        result['timestamp'] = datetime.now().isoformat()
+        history.append(result)
+
+        with open(history_file, 'w') as f:
+            json.dump(history, f, indent=4)
+    except Exception as e:
+        print(f"[ERROR] Saving history failed: {e}")
+
+@app.route('/api/history', methods=['GET'])
+def get_forecast_history():
+    history_file = 'forecast_history.json'
+    try:
+        if os.path.exists(history_file):
+            with open(history_file, 'r') as f:
+                history = json.load(f)
+        else:
+            history = []
+        return jsonify(history)
+    except Exception as e:
+        print(f"[ERROR] Reading history failed: {e}")
+        return jsonify({"error": "Failed to load history"}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
