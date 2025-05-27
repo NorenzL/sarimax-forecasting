@@ -19,9 +19,10 @@ export default function ForecastHistoryPage() {
         return res.json();
       })
       .then((data) => {
-        const filtered = data.filter(
-          (entry) => entry.coffee_type === coffeeType
-        );
+        const filtered = data
+          .filter((entry) => entry.coffee_type === coffeeType)
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
         setHistory(filtered);
         setSelectedResult(filtered[0] || null);
         setLoading(false);
