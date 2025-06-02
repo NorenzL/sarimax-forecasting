@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "../components/Navbar";

@@ -1,4 +1,3 @@
-// src/pages/CoffeePage.jsx
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -17,10 +16,10 @@ export default function CoffeePage() {
   const { type } = useParams();
   const readable = type[0].toUpperCase() + type.slice(1);
 
-  // your three common factors from context:
+  // common factors from context:
   const { factors, uploadFactor, deleteFactor } = useFactors();
 
-  // instead of mainFactors-array-of-names, store file objects:
+  // store file objects:
   const [mainFiles, setMainFiles] = useState({});
 
   // UI state:
@@ -31,7 +30,6 @@ export default function CoffeePage() {
   const [selectedFactor, setSelectedFactor] = useState(null);
   const [missingFactors, setMissingFactors] = useState([]);
   const [showMissingModal, setShowMissingModal] = useState(false);
-  const [forecastResult, setForecastResult] = useState(null);
   const [isForecasting, setIsForecasting] = useState(false);
   const navigate = useNavigate();
 
@@ -43,24 +41,23 @@ export default function CoffeePage() {
     "Production Cost",
   ];
 
-  // step 1: open the upload‐modal
+  // open the upload‐modal
   const handleUploadTrigger = (factorName) => {
     setSelectedFactor(factorName);
     setUploadModalOpen(true);
   };
 
-  // step 2: when the modal hands us back a real File
   const handleUpload = (name, file) => {
     setLoadingFactor(name);
     setTimeout(() => {
-      // if it’s one of the two “main” cards, store in mainFiles:
+      // exclusive factors per coffee
       if (
         name.includes("Farmgate Price") ||
         name.includes("Production Volume")
       ) {
         setMainFiles((prev) => ({ ...prev, [name]: file }));
       } else {
-        // otherwise it’s a “common” factor
+        // common factor
         uploadFactor(name, file);
       }
       setLoadingFactor(null);
@@ -68,7 +65,7 @@ export default function CoffeePage() {
     }, 800);
   };
 
-  // confirm ⇒ delete either from mainFiles or context
+  // delete
   const handleConfirmDelete = (name) => {
     setToDelete(name);
     setShowConfirm(true);
@@ -91,9 +88,9 @@ export default function CoffeePage() {
     }, 800);
   };
 
-  // finally pack up **all** of the File objects and POST
+  // POST files
   const handleForecastClick = async () => {
-    // build list of missing
+    // missing files (if any)
     const uploadedNames = [
       ...Object.keys(mainFiles),
       ...factors.filter((f) => f.uploaded).map((f) => f.name),
@@ -105,9 +102,9 @@ export default function CoffeePage() {
       return;
     }
 
-    // all good, send them
+    // complete data
     const formData = new FormData();
-    // main files
+
     Object.entries(mainFiles).forEach(([name, file]) =>
       formData.append(name, file)
     );
@@ -148,7 +145,7 @@ export default function CoffeePage() {
     <div className="bg-background min-h-screen">
       <Navbar />
       <main className="px-8 py-12 mt-8 flex flex-col items-center gap-10">
-        {/* header + back‐arrow */}
+        {/* header */}
         <div className="w-full max-w-6xl flex flex-col gap-3">
           <div className="flex items-center gap-4">
             <button onClick={() => window.history.back()}>
@@ -163,7 +160,7 @@ export default function CoffeePage() {
           <hr className="border-2 border-text w-full" />
         </div>
 
-        {/* the two “main” upload cards */}
+        {/* farmgate and production volume card */}
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-2xl justify-center">
           {[`${readable} Farmgate Price`, `${readable} Production Volume`].map(
             (label) => {
@@ -216,7 +213,7 @@ export default function CoffeePage() {
           )}
         </div>
 
-        {/* your three common factors */}
+        {/* common factors */}
         <CommonFactors
           factors={factors}
           onUpload={handleUploadTrigger}
@@ -236,7 +233,7 @@ export default function CoffeePage() {
         </div>
       </main>
 
-      {/* DELETE confirmation */}
+      {/* Delete Modal */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
@@ -257,7 +254,7 @@ export default function CoffeePage() {
         )}
       </AnimatePresence>
 
-      {/* UPLOAD modal */}
+      {/* upload modal */}
       <AnimatePresence>
         {uploadModalOpen && (
           <motion.div
@@ -278,7 +275,7 @@ export default function CoffeePage() {
         )}
       </AnimatePresence>
 
-      {/* MISSING‐FILES warning */}
+      {/* missing files modal */}
       <AnimatePresence>
         {showMissingModal && (
           <motion.div
@@ -290,7 +287,6 @@ export default function CoffeePage() {
             transition={{ duration: 0.3 }}
           >
             <div className="bg-[#FFF9EC] rounded-md shadow-lg w-full max-w-3xl">
-              {/* header */}
               {/* Header */}
               <div className="bg-[#5C4033] text-white px-6 py-4 flex justify-between items-center rounded-t-md">
                 <h2 className="text-xl font-semibold">Incomplete Data</h2>

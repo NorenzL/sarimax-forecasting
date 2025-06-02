@@ -1,7 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
@@ -10,9 +9,8 @@ import {
   PointElement,
   Legend,
   Tooltip,
-} from "chart.js";
+} from "chart.js"; //For plotting
 
-import { useState } from "react";
 import helpIcon from "../assets/images/help.png";
 import historyIcon from "../assets/images/history.png";
 import ForecastDisplay from "../pages/ForecastDisplay";
@@ -89,7 +87,10 @@ function ForecastResultPage() {
           >
             <img src={historyIcon} alt="History" className="w-8 h-8" />
           </button>
-          <button className="bg-highlights text-primary font-bold px-3 py-1 rounded hover:bg-[#a19f43] transition hover:text-background">
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-highlights text-primary font-bold px-3 py-1 rounded hover:bg-[#a19f43] transition hover:text-background"
+          >
             Update Forecast
           </button>
         </div>

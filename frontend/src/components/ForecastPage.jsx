@@ -38,7 +38,7 @@ function ForecastPage() {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((response) => {
-        // Instead of setting local result → navigate to result page
+        // Result page nav
         navigate("/forecast-result", { state: { result: response.data } });
         setLoading(false);
       })

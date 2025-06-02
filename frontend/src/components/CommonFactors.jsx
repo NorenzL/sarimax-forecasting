@@ -1,28 +1,9 @@
-import React, { useRef } from "react";
-
 const CommonFactors = ({
   factors,
   onUpload,
   onConfirmDelete,
   loadingFactor,
 }) => {
-  const fileInputRef = useRef();
-
-  const handleChange = (e, name) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (
-      !file.name.toLowerCase().endsWith(".csv") &&
-      !file.name.toLowerCase().endsWith(".xlsx")
-    ) {
-      alert("Only .csv or .xlsx files are allowed.");
-      return;
-    }
-
-    onUpload(name, file);
-  };
-
   return (
     <div className="flex flex-col items-center gap-2 mt-4">
       <p className="text-xs text-center mb-2 text-text">
@@ -42,7 +23,6 @@ const CommonFactors = ({
             key={`${factor.name}-${isLoading ? "loading" : "idle"}`}
             className="flex items-center gap-2"
           >
-            {/* Hidden file input */}
             <button
               onClick={() => onUpload(factor.name)}
               disabled={factor.uploaded || isLoading}

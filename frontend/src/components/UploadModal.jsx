@@ -22,6 +22,7 @@ const UploadModal = ({ isOpen, onClose, onUpload, factorName }) => {
     onClose();
   };
 
+  // dropping of file
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];

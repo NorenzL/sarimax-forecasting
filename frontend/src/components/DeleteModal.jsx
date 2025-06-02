@@ -1,5 +1,3 @@
-// src/components/DeleteModal.jsx
-
 import React from "react";
 
 const DeleteModal = ({ isOpen, onClose, onConfirm, fileName }) => {

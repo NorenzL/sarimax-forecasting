@@ -39,7 +39,7 @@ export default function ForecastHistoryPage() {
       {/* Navbar stays on top */}
       <Navbar />
 
-      {/* Main section: sidebar and content side by side */}
+      {/* Content */}
       <div className="flex flex-1 mt-12">
         {/* Sidebar */}
         <div className="w-64 bg-primary ml-4 mt-4 mb-4 rounded-t-2xl">

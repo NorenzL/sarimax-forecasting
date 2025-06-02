@@ -5,14 +5,14 @@ const FactorContext = createContext();
 export const useFactors = () => useContext(FactorContext);
 
 export const FactorProvider = ({ children }) => {
-  // Global state for your three common factors:
+  // three common factors global state
   const [factors, setFactors] = useState([
     { name: "Inflation rate", uploaded: false, file: null },
     { name: "Net Return", uploaded: false, file: null },
     { name: "Production Cost", uploaded: false, file: null },
   ]);
 
-  // Upload a file into a factor
+  // File upload
   const uploadFactor = (name, file) => {
     setFactors((prev) =>
       prev.map((factor) =>
@@ -21,7 +21,7 @@ export const FactorProvider = ({ children }) => {
     );
   };
 
-  // Remove a factor’s file
+  // Remove file
   const deleteFactor = (name) => {
     setFactors((prev) =>
       prev.map((f) =>
