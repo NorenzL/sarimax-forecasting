@@ -23,7 +23,7 @@ CORS(app)
 @app.route('/forecast', methods=['POST'])
 def forecast():
     try:
-        # ✅ Get coffee type from form data
+        # get coffee type from form
         coffee_type = request.form.get('type')
 
         print(f"Received type: {coffee_type}")
@@ -65,7 +65,7 @@ def forecast():
             
         }
 
-        # ✅ Dynamically build required file keys
+        # required files identification
         required_files = [
             f"{coffee_type} Farmgate Price",
             f"{coffee_type} Production Volume",
@@ -87,7 +87,7 @@ def forecast():
         if missing_files:
             return jsonify({'error': f'Missing files: {missing_files}'}), 400
 
-        # ✅ Read files into dataframes
+        # file format checker
         dfs = []
         for key, file in uploaded_files.items():
             if file.filename.endswith('.csv'):
@@ -98,16 +98,18 @@ def forecast():
                 return jsonify({'error': f'Unsupported file format for {key}'}), 400
             dfs.append(df)
 
-        # ✅ Merge dataframes on 'date'
+        # Merge data using "date" column
         merged_df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), dfs)
 
         print("Merged DataFrame:")
         print(merged_df)
 
 
-        # ✅ Call your forecast logic
+        # forecast Call
         result = run_forecast(merged_df, coffee_type, coffee_settings)
 
+
+        # Record result data
         save_to_history(result)
         return jsonify(result)
     
@@ -118,13 +120,13 @@ def forecast():
     
 def run_forecast(merged_df, coffee_type, coffee_settings):
     try:
-        # Ensure 'date' column is datetime and set as index
+        # Check date column if date
         merged_df['date'] = pd.to_datetime(merged_df['date'])
         merged_df = merged_df.sort_values('date')
         merged_df = merged_df.set_index('date')
 
         granger_df = merged_df[['Farmgate Price', 'Inflation rate']].dropna()
-        max_lag = 4 # adjust lag based on data frequency
+        max_lag = 4 
 
         print("\n[INFO] Running Granger Causality Test (Inflation rate → Farmgate Price)...")
         granger_result = grangercausalitytests(granger_df[['Farmgate Price', 'Inflation rate']], maxlag=max_lag, verbose=False)
@@ -137,14 +139,14 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             print(f"{lag}: {pval}")
 
 
-        # Define target variable (Farmgate Price)
+        # Target variable
         y = merged_df['Farmgate Price']
 
-        # Define exogenous variables
+        # exog variables
         exog_control = merged_df[['Production Cost', 'Net Return', 'Production Volume']]
         exog_experimental = merged_df[['Production Cost', 'Net Return', 'Production Volume', 'Inflation rate']]
 
-        # Split into training and testing sets
+        # 80/20 train-test split
         train_size = int(len(y) * 0.8)
         y_train, y_test = y[:train_size], y[train_size:]
         X_control_train, X_control_test = exog_control[:train_size], exog_control[train_size:]
@@ -159,13 +161,13 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
         volume_order = coffee_config['volume_order']
         volume_seasonal = coffee_config['volume_seasonal']
 
-        # Function to fit and evaluate SARIMAX
+        # forecast function
         def fit_sarimax(y_train, y_test, X_train, X_test, order, seasonal_order, label):
             model = SARIMAX(y_train, exog=X_train, order=order, seasonal_order=seasonal_order)
             result = model.fit()
             forecast = result.predict(start=len(y_train), end=len(y_train)+len(y_test)-1, exog=X_test)
 
-            # Compute metrics
+            # metric eval
             mae = mean_absolute_error(y_test, forecast)
             rmse = np.sqrt(mean_squared_error(y_test, forecast))
             naive_forecast = np.abs(np.diff(y_test)).mean() if len(y_test) > 1 else 1
@@ -195,16 +197,16 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
                 'forecast_values': forecast.tolist(),  
             }
         
-        # Run models
+        # forecast call
         control_result = fit_sarimax(y_train, y_test, X_control_train, X_control_test, control_order, control_seasonal_order, "Control")
         experimental_result = fit_sarimax(y_train, y_test, X_experimental_train, X_experimental_test, experimental_order, experimental_seasonal_order, "Experimental")
 
-                # =================== ADDITIONAL FUTURE FORECAST ===================
+        
         def future_forecast(x_price, exog_vars, exog_columns, order, seasonal_order, volume_order, volume_seasonal, label):
             # Fit models for each exogenous variable
             exog_vars_subset = exog_vars[exog_columns]
             exog_forecasts = {}
-            forecast_steps = 8
+            forecast_steps = 8 # time frame 
             last_date = exog_vars.index[-1]
             future_dates = pd.date_range(start=last_date + pd.offsets.QuarterBegin(), periods=forecast_steps, freq='Q')
 
@@ -214,7 +216,7 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
                 elif col == 'Production Volume':
                     model = SARIMAX(exog_vars[col], order=volume_order, seasonal_order=volume_seasonal)
                 elif col == 'Production Cost':
-                    model = ARIMA(exog_vars[col], order=(3, 2, 3))
+                    model = ARIMA(exog_vars[col], order=(4, 1, 1))
                 elif col == 'Net Return':
                     model = ARIMA(exog_vars[col], order=(3, 2, 4))
                 else:
@@ -234,14 +236,14 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             print("\n[INFO] Forecasted values for exogenous variables:")
             print(exog_forecast_df)
 
-            # Fit SARIMAX for Farmgate Price
+            # model fitting
             model_price = SARIMAX(x_price, exog=exog_vars_subset, order=order, seasonal_order=seasonal_order)
             result_price = model_price.fit()
 
             # Forecast Farmgate Price
             forecast_price = result_price.forecast(steps=forecast_steps, exog=exog_forecast_df)
 
-            # DEBUG PRINT: Farmgate Price forecast values
+            
             print("\n[INFO] Forecasted Farmgate Prices:")
             for date, value in zip(future_dates, forecast_price):
                 print(f"{date.strftime('%Y-%m-%d')}: {value:.2f}")
