@@ -3,15 +3,12 @@ from flask_cors import CORS
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import io
 import gc
-import base64
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import grangercausalitytests
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from functools import reduce
-import tkinter as tk
 import os
 import json
 from datetime import datetime
@@ -257,17 +254,9 @@ def run_forecast(merged_df, coffee_type, coffee_settings):
             ax.set_title(f'{label} - 2-Year Forecast')
             ax.legend()
 
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png')
-            plt.close(fig)
-            buf.seek(0)
-            image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-            buf.close()
-
             return {
                 'forecast_dates': future_dates.strftime('%Y-%m-%d').tolist(),
-                'forecast_values': forecast_price.tolist(),
-                'plot': image_base64
+                'forecast_values': forecast_price.tolist()
             }
 
         # Run future forecasts
