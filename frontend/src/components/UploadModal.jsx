@@ -51,15 +51,15 @@ const UploadModal = ({ isOpen, onClose, onUpload, factorName }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
-        className="bg-[#FFF9EC] rounded-md shadow-lg w-full max-w-3xl"
+        className="bg-[#FFF9EC] rounded-t-2xl shadow-lg w-full max-w-3xl"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
         {/* Header */}
         <div className="bg-[#5C4033] text-white px-6 py-4 flex justify-between items-center rounded-t-md">
-          <h2 className="text-xl font-semibold">{factorName}</h2>
+          <h2 className="text-3xl font-semibold">{factorName}</h2>
           <button
-            className="text-2xl font-bold hover:text-red-400"
+            className="text-4xl font-bold hover:text-red-400"
             onClick={onClose}
           >
             ×
@@ -67,8 +67,8 @@ const UploadModal = ({ isOpen, onClose, onUpload, factorName }) => {
         </div>
 
         {/* Content */}
-        <div className="p-1 text-center">
-          <div className="border-4 border-dashed border-[#5C4033] p-16 rounded flex flex-col items-center">
+        <div className="p-3 text-center ">
+          <div className="border-2 border-dashed border-[#5C4033] p-16 rounded-3xl flex flex-col items-center">
             <div
               className="cursor-pointer w-full flex flex-col items-center"
               onClick={() => fileInputRef.current.click()}

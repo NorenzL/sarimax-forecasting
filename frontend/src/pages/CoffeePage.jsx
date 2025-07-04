@@ -286,12 +286,12 @@ export default function CoffeePage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="bg-[#FFF9EC] rounded-md shadow-lg w-full max-w-3xl">
+            <div className="bg-[#FFF9EC] rounded-t-xl shadow-lg w-full max-w-3xl">
               {/* Header */}
               <div className="bg-[#5C4033] text-white px-6 py-4 flex justify-between items-center rounded-t-md">
-                <h2 className="text-xl font-semibold">Incomplete Data</h2>
+                <h2 className="text-3xl font-semibold">Incomplete Data</h2>
                 <button
-                  className="text-2xl font-bold hover:text-red-400"
+                  className="text-4xl font-bold hover:text-red-400"
                   onClick={() => setShowMissingModal(false)}
                 >
                   ×
