@@ -24,9 +24,8 @@ KapeCast is a web-based forecasting application developed as part of our undergr
 
 **Frontend:** React, Tailwind CSS
 
-**Backend:** Flask (Python)
+**Backend:** Flask (Python), Node.js, npm
 
-**Backend:** Node.js, npm
 
 
 ## Acknowledgements
